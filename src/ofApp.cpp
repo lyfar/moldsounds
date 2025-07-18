@@ -416,6 +416,14 @@ bool ofApp::activeTransition()
     return (getTime() - transitionTriggerTime) <= GlobalSettings::TRANSITION_DURATION;
 }
 
+std::string ofApp::getTimestampedFilename(const std::string &prefix)
+{
+    auto t = std::time(nullptr);
+    std::ostringstream oss;
+    oss << "screenshots/" << prefix << std::put_time(std::localtime(&t), "%Y%m%d_%H%M%S") << ".png";
+    return oss.str();
+}
+
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key)
 {

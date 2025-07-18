@@ -63,3 +63,20 @@ void ofApp::actionSpawnParticles(int spawnType)
         setRandomSpawn();
     }
 }
+
+
+void ofApp::actionSaveFboImage() {
+    ofPixels pixels;
+    fboDisplay.readToPixels(pixels);
+    std::string filename = getTimestampedFilename("fbo_");
+    ofSaveImage(pixels, filename);
+    ofLogNotice() << "Saved FBO image to " << filename;
+}
+
+void ofApp::actionSaveWindowScreenshot() {
+    ofImage screenshot;
+    screenshot.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+    std::string filename = getTimestampedFilename("screenshot_");
+    screenshot.save(filename);
+    ofLogNotice() << "Saved screen capture to " << filename;
+}

@@ -100,6 +100,12 @@ void ofApp::keyPressed(int key)
     case 'i':
         pointsDataManager.writeParamsToFile();
         break;
+    case '-':
+        actionSaveFboImage();
+        break;
+    case '+':
+        actionSaveWindowScreenshot();
+        break;
     }
 
     paramsUpdate();

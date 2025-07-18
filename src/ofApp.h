@@ -48,6 +48,7 @@ public:
     void drawPad(float col, float alpha);
     void drawTextBox(const std::string &stringToShow, ofTrueTypeFont *pFont, float col, float alpha);
     std::string roundedString(float value);
+    std::string getTimestampedFilename(const std::string& prefix);
     float u = 1; // variable for screen resolution adaptation
 
     float getTime();
@@ -63,6 +64,8 @@ public:
     void actionChangeDisplayType();
     void actionChangeSelectionIndex(int dir);
     void actionSpawnParticles(int spawnType);
+    void actionSaveFboImage();
+    void actionSaveWindowScreenshot();
 
     float actionAreaSizeSigma = 0.3;
     int sigmaCount = 2;
