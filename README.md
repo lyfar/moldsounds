@@ -1,6 +1,7 @@
 ## Interactive physarum
 
 Interactive physarum/organic simulations, mostly for an installation with gamepad control. But you can also try it with mouse and keyboard. It’s not meant to be scientific, but rather playful and aesthetically pleasing.
+See [explanation article](https://bleuje.com/physarum-explanation/) to see how it works.
 
 See [how to compile and run](https://github.com/Bleuje/interactive-physarum/tree/main?tab=readme-ov-file#how-to-compile-and-run) section to run it yourself.
 
@@ -23,12 +24,11 @@ Some text for crediting is displayed all the time on screen (bottom left corner)
 
 Some screenshots to give a little taste of the project!
 
-![Screenshot 1 May, 2024, 5](/doc/screenshot-1-may-2024-5.png)
-![Screenshot 1 May, 2024, 4bis](/doc/screenshot-1-may-2024-4-bis.png)
 ![Screenshot 8 May, 2024, 2](/doc/screenshot-8-may-2024-2.png)
 ![Screenshot 15 November, 2024, Arctic Blue](/doc/screenshot-nov-2024-ArcticBlue-1.png)
 ![Screenshot 15 November, 2024, Purple Fire](/doc/screenshot-nov-2024-PurpleFire-1.png)
-![Screenshot 15 November, 2024, z0rg Purple](/doc/screenshot-nov-2024-ZorgPurple-1.png)
+![Screenshot purple blobs](https://physarum-media.bleuje.com/screenshots/interactive-physarum-v2-7.png)
+![Screenshot yellow tissue](https://physarum-media.bleuje.com/screenshots/interactive-physarum-v2-10.png)
 
 See end of readme for more screenshots.
 
@@ -50,6 +50,8 @@ In case you're new to openFrameworks, here's how you can launch the program: put
 There is a branch "no-gamepad" without gamepad code (`git checkout no-gamepad`), it's there in case the gamepad code is responsible for some compilation errors.
 
 Mouse and keyboard interaction is explained later below.
+
+The current best branches are `install-2` and `install-3` though text is in french. It's high resolution with up to 2 players/gamepads.
 
 ### Some context to understand the technique
 
@@ -135,7 +137,6 @@ I made a branch "light-compute" that uses less particles and has smaller simulat
 
 ![Screenshot 15 November, 2024, Forest Green](/doc/screenshot-nov-2024-ForestGreen-1.png)
 ![Screenshot 15 November, 2024, Yellow](/doc/screenshot-nov-2024-Yellow-1.png)
-![Screenshot 8 May, 2024, 1](/doc/screenshot-8-may-2024-1.png)
-![Screenshot 1 May, 2024, 1](/doc/screenshot-1-may-2024-1.png)
-![Screenshot 1 May, 2024, 2](/doc/screenshot-1-may-2024-2.png)
-![Screenshot 1 May, 2024, 3](/doc/screenshot-1-may-2024-3.png)
+![Screenshot red waves](https://physarum-media.bleuje.com/screenshots/interactive-physarum-v2-6.png)
+![Screenshot green branches](https://physarum-media.bleuje.com/screenshots/interactive-physarum-v2-12.png)
+![Screenshot island](https://physarum-media.bleuje.com/screenshots/interactive-physarum-v2-9.png)
