@@ -7,6 +7,9 @@ void ofApp::setup()
 {
     ofSetFrameRate(GlobalSettings::FRAME_RATE);
 
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+    ofSetRandomSeed(std::rand());
+
     ofEnableAntiAliasing();
 
     u = float(ofGetHeight()) / 1080;
