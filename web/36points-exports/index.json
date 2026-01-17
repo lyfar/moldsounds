@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "file": "36points_a_rooting_1768557047472.json",
+      "name": "a_rooting",
+      "exported": "2026-01-16T09:50:47.472Z",
+      "label": "a_rooting (2026-01-16)"
+    },
+    {
+      "file": "36points_circular_consolidation_1768557116123.json",
+      "name": "circular_consolidation",
+      "exported": "2026-01-16T09:51:56.123Z",
+      "label": "circular_consolidation (2026-01-16)"
+    },
+    {
+      "file": "36points_clear_spaghetti_1768557186075.json",
+      "name": "clear_spaghetti",
+      "exported": "2026-01-16T09:53:06.075Z",
+      "label": "clear_spaghetti (2026-01-16)"
+    },
+    {
+      "file": "36points_enmeshed_singularities_1768557022306.json",
+      "name": "enmeshed_singularities",
+      "exported": "2026-01-16T09:50:22.306Z",
+      "label": "enmeshed_singularities (2026-01-16)"
+    },
+    {
+      "file": "36points_ink_on_white_1768557131302.json",
+      "name": "ink_on_white",
+      "exported": "2026-01-16T09:52:11.302Z",
+      "label": "ink_on_white (2026-01-16)"
+    },
+    {
+      "file": "36points_inverse_network_1768557146866.json",
+      "name": "inverse_network",
+      "exported": "2026-01-16T09:52:26.866Z",
+      "label": "inverse_network (2026-01-16)"
+    },
+    {
+      "file": "36points_more_individuals_1768557052905.json",
+      "name": "more_individuals",
+      "exported": "2026-01-16T09:50:52.905Z",
+      "label": "more_individuals (2026-01-16)"
+    },
+    {
+      "file": "36points_network_time_1768557137098.json",
+      "name": "network_time",
+      "exported": "2026-01-16T09:52:17.098Z",
+      "label": "network_time (2026-01-16)"
+    },
+    {
+      "file": "36points_petri_worms_1768556973743.json",
+      "name": "petri_worms",
+      "exported": "2026-01-16T09:49:33.742Z",
+      "label": "petri_worms (2026-01-16)"
+    },
+    {
+      "file": "36points_petri_worms_1768557043496.json",
+      "name": "petri_worms",
+      "exported": "2026-01-16T09:50:43.496Z",
+      "label": "petri_worms (2026-01-16)"
+    },
+    {
+      "file": "36points_positive_negative_space_1768557111346.json",
+      "name": "positive_negative_space",
+      "exported": "2026-01-16T09:51:51.345Z",
+      "label": "positive_negative_space (2026-01-16)"
+    },
+    {
+      "file": "36points_probe_emergence_from_line_1768557160177.json",
+      "name": "probe_emergence_from_line",
+      "exported": "2026-01-16T09:52:40.177Z",
+      "label": "probe_emergence_from_line (2026-01-16)"
+    },
+    {
+      "file": "36points_pure_multiscale_1768556995104.json",
+      "name": "pure_multiscale",
+      "exported": "2026-01-16T09:49:55.103Z",
+      "label": "pure_multiscale (2026-01-16)"
+    },
+    {
+      "file": "36points_sacred_network_nodules_1768557100843.json",
+      "name": "sacred_network_nodules",
+      "exported": "2026-01-16T09:51:40.843Z",
+      "label": "sacred_network_nodules (2026-01-16)"
+    },
+    {
+      "file": "36points_sacred_network_nodules_1768557197113.json",
+      "name": "sacred_network_nodules",
+      "exported": "2026-01-16T09:53:17.113Z",
+      "label": "sacred_network_nodules (2026-01-16)"
+    },
+    {
+      "file": "36points_scaling_nodule_emergence_1768557155433.json",
+      "name": "scaling_nodule_emergence",
+      "exported": "2026-01-16T09:52:35.433Z",
+      "label": "scaling_nodule_emergence (2026-01-16)"
+    },
+    {
+      "file": "36points_sloppy_bucky_1768557059914.json",
+      "name": "sloppy_bucky",
+      "exported": "2026-01-16T09:50:59.914Z",
+      "label": "sloppy_bucky (2026-01-16)"
+    },
+    {
+      "file": "36points_star_network_1768556875770.json",
+      "name": "star_network",
+      "exported": "2026-01-16T09:47:55.770Z",
+      "label": "star_network (2026-01-16)"
+    },
+    {
+      "file": "36points_star_network_1768557016396.json",
+      "name": "star_network",
+      "exported": "2026-01-16T09:50:16.396Z",
+      "label": "star_network (2026-01-16)"
+    },
+    {
+      "file": "36points_traffic_many_lanes_1768557011267.json",
+      "name": "traffic_many_lanes",
+      "exported": "2026-01-16T09:50:11.266Z",
+      "label": "traffic_many_lanes (2026-01-16)"
+    },
+    {
+      "file": "36points_transmission_tower_1768557095515.json",
+      "name": "transmission_tower",
+      "exported": "2026-01-16T09:51:35.515Z",
+      "label": "transmission_tower (2026-01-16)"
+    },
+    {
+      "file": "36points_turing_1768557035585.json",
+      "name": "turing",
+      "exported": "2026-01-16T09:50:35.585Z",
+      "label": "turing (2026-01-16)"
+    },
+    {
+      "file": "36points_waves_upturn_1768557031241.json",
+      "name": "waves_upturn",
+      "exported": "2026-01-16T09:50:31.241Z",
+      "label": "waves_upturn (2026-01-16)"
+    }
+  ]
+}

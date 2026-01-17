@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VOID ANNIHILATOR</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="gfx" aria-label="Void Annihilator"></canvas>
+      <div id="pen-indicator" aria-hidden="true"></div>
+
+      <!-- Game HUD - Top Left -->
+      <div class="game-hud">
+        <div class="game-hud__title">VOID ANNIHILATOR</div>
+        <div class="game-hud__stats">
+          <div class="stat">
+            <span class="stat__label">LEVEL</span>
+            <span id="levelNumber" class="stat__value">1</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">SHOTS</span>
+            <span id="shotCount" class="stat__value">0</span>
+          </div>
+        </div>
+        <div class="game-hud__hint">
+          <kbd>Space</kbd> Next Level
+        </div>
+      </div>
+      
+      <!-- Flow Control HUD - Bottom Center -->
+      <div id="flowControlHud" class="flow-control-hud">
+        <div class="flow-indicator">
+          <span class="flow-label">FLOW</span>
+          <span class="flow-value">X: 0.00 | Y: 0.00</span>
+        </div>
+        <div class="flow-indicator">
+          <span class="flow-label">INERTIA</span>
+          <span class="flow-value">0.50</span>
+        </div>
+        <div class="flow-hint">
+          <kbd>W</kbd><kbd>S</kbd> Flow Y &nbsp;
+          <kbd>A</kbd><kbd>D</kbd> Flow X &nbsp;
+          <kbd>Q</kbd><kbd>E</kbd> Inertia
+        </div>
+      </div>
+
+      <!-- Weapons Panel - Left -->
+      <div class="weapons-panel">
+        <div class="weapons-panel__title">WEAPONS</div>
+        <div id="weaponList" class="weapons-panel__list"></div>
+      </div>
+
+      <!-- Sound Wave Tower Panel - Bottom Left -->
+      <div class="tower-panel" id="towerPanel">
+        <div class="tower-panel__header">
+          <span class="tower-panel__title">WAVE TOWERS</span>
+          <span class="tower-panel__count" id="towerCount">0/8</span>
+        </div>
+        
+        <button class="tower-panel__place-btn" id="placeTowerBtn" type="button">
+          <kbd>6</kbd>
+          <span>Place Tower</span>
+        </button>
+        
+        <div class="tower-panel__list" id="towerList">
+          <!-- Towers will be added here dynamically -->
+        </div>
+        
+        <!-- Settings for NEW tower placement -->
+        <div class="tower-panel__section" id="newTowerSection">
+          <div class="tower-section-title">New Tower Settings</div>
+          <div class="tower-control">
+            <label>Radius <span id="newTowerRadiusValue">0.15</span></label>
+            <input id="newTowerRadius" type="range" min="0.05" max="0.5" step="0.01" value="0.15" />
+          </div>
+          <div class="tower-control">
+            <label>Frequency <span id="newTowerFreqValue">440 Hz</span></label>
+            <input id="newTowerFreq" type="range" min="20" max="2000" step="1" value="440" />
+          </div>
+          <div class="tower-control">
+            <label>Strength <span id="newTowerStrengthValue">0.70</span></label>
+            <input id="newTowerStrength" type="range" min="0" max="1" step="0.01" value="0.7" />
+          </div>
+          <div class="tower-control">
+            <label>Pattern</label>
+            <select id="newTowerPattern"></select>
+          </div>
+        </div>
+        
+        <!-- Settings for SELECTED tower editing -->
+        <div class="tower-panel__section tower-panel__section--edit hidden" id="editTowerSection">
+          <div class="tower-section-title">Edit Tower #<span id="editTowerNum">1</span></div>
+          <div class="tower-control">
+            <label>Radius <span id="editTowerRadiusValue">0.15</span></label>
+            <input id="editTowerRadius" type="range" min="0.05" max="0.5" step="0.01" />
+          </div>
+          <div class="tower-control">
+            <label>Frequency <span id="editTowerFreqValue">440 Hz</span></label>
+            <input id="editTowerFreq" type="range" min="20" max="2000" step="1" />
+          </div>
+          <div class="tower-control">
+            <label>Strength <span id="editTowerStrengthValue">0.70</span></label>
+            <input id="editTowerStrength" type="range" min="0" max="1" step="0.01" />
+          </div>
+          <div class="tower-control">
+            <label>Pattern</label>
+            <select id="editTowerPattern"></select>
+          </div>
+        </div>
+        
+        <div class="tower-panel__actions">
+          <button id="clearTowersBtn" class="tower-action-btn" type="button">Clear All</button>
+        </div>
+      </div>
+      
+      <!-- Hidden legacy elements for compatibility -->
+      <input id="soundToggle" type="checkbox" class="hidden" />
+      <div id="annihilatorPanel" class="hidden"></div>
+      <button id="annihilatorButton" class="hidden" type="button"></button>
+      <span id="annihilatorStatus" class="hidden"></span>
+      <input id="soundFrequency" type="range" class="hidden" />
+      <input id="soundStrength" type="range" class="hidden" />
+      <select id="soundWaveMode" class="hidden"></select>
+
+      <!-- Quick Actions - Top Right -->
+      <div class="quick-actions">
+        <button id="quantumShift" class="quick-action" type="button">
+          <kbd>Q</kbd>
+          <span>Quantum Shift</span>
+        </button>
+        <button id="nextLevel" class="quick-action quick-action--primary" type="button">
+          <kbd>Space</kbd>
+          <span>Next Level</span>
+        </button>
+      </div>
+
+      <!-- Settings Panel - Right (Collapsed by default) -->
+      <aside class="settings-panel">
+        <details class="settings-section">
+          <summary>Settings</summary>
+          <div class="settings-content">
+            <div class="control">
+              <label for="penSize">Pen size</label>
+              <input id="penSize" type="range" min="0.02" max="0.85" step="0.01" />
+            </div>
+            <div class="control">
+              <label for="colorMode">Color mode</label>
+              <select id="colorMode"></select>
+            </div>
+            <div class="control">
+              <label for="quality">Quality (reload)</label>
+              <select id="quality"></select>
+            </div>
+            <div class="control">
+              <label for="particleDensity">
+                Particle density <span id="particleDensityValue">2.0x</span>
+              </label>
+              <input id="particleDensity" type="range" min="0.5" max="5.0" step="0.1" />
+            </div>
+            <div class="control control--info" id="particleInfo">
+              Current: ~1M particles
+            </div>
+            <div class="control">
+              <label for="weaponVolume">
+                Sound volume <span id="weaponVolumeValue">50%</span>
+              </label>
+              <input id="weaponVolume" type="range" min="0" max="1" step="0.01" />
+            </div>
+            <div class="control control--toggle">
+              <label for="showPen">Show pen</label>
+              <input id="showPen" type="checkbox" checked />
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary>Render</summary>
+          <div class="settings-content">
+            <div class="control">
+              <label for="depositFactor">Deposit <span id="depositFactorValue">0.003</span></label>
+              <input id="depositFactor" type="range" min="0" max="1" step="0.001" />
+            </div>
+            <div class="control">
+              <label for="decayFactor">Decay <span id="decayFactorValue">0.750</span></label>
+              <input id="decayFactor" type="range" min="0" max="1" step="0.001" />
+            </div>
+            <div class="control">
+              <label for="blurPasses">Blur passes <span id="blurPassesValue">1</span></label>
+              <input id="blurPasses" type="range" min="0" max="20" step="1" />
+            </div>
+            <div class="control">
+              <label for="drawOpacity">Draw opacity <span id="drawOpacityValue">1.000</span></label>
+              <input id="drawOpacity" type="range" min="0" max="1" step="0.001" />
+            </div>
+            <div class="control">
+              <label for="fillOpacity">Fill opacity <span id="fillOpacityValue">0.000</span></label>
+              <input id="fillOpacity" type="range" min="0" max="1" step="0.001" />
+            </div>
+            <div class="control">
+              <label for="dotSize">Dot size <span id="dotSizeValue">10.0</span></label>
+              <input id="dotSize" type="range" min="0" max="50" step="0.1" />
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary>Presets</summary>
+          <div class="settings-content">
+            <div class="control">
+              <label for="penPoint">Pen preset</label>
+              <select id="penPoint"></select>
+            </div>
+            <div class="control">
+              <label for="bgPoint">Background preset</label>
+              <select id="bgPoint"></select>
+            </div>
+            <div class="button-row">
+              <button id="exportPreset" type="button">Export JSON</button>
+              <button id="importPreset" type="button">Import JSON</button>
+            </div>
+            <input id="presetFile" type="file" accept="application/json,.json" class="hidden" />
+            <div class="control">
+              <label for="presetLibrary">36 Points exports</label>
+              <select id="presetLibrary"></select>
+            </div>
+            <div class="control">
+              <label for="presetApplyTarget">Apply to</label>
+              <select id="presetApplyTarget">
+                <option value="0">Pen</option>
+                <option value="1">Background</option>
+              </select>
+            </div>
+            <div class="button-row">
+              <button id="applyPresetBtn" type="button">Apply preset</button>
+            </div>
+            <div id="presetInfo" class="control control--info">Preset library ready.</div>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary>Advanced</summary>
+          <div class="settings-content">
+            <div class="control">
+              <label for="inertia">Inertia</label>
+              <input id="inertia" type="range" min="0" max="1" step="0.01" />
+            </div>
+            <div class="control">
+              <label for="flowX">Flow X</label>
+              <input id="flowX" type="range" min="-1" max="1" step="0.01" />
+            </div>
+            <div class="control">
+              <label for="flowY">Flow Y</label>
+              <input id="flowY" type="range" min="-1" max="1" step="0.01" />
+            </div>
+            <div class="button-row">
+              <button id="randomize" type="button">Random</button>
+              <button id="nextColor" type="button">Color</button>
+              <button id="saveImage" type="button">Save</button>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary>Tuning</summary>
+          <div class="settings-content">
+            <div class="control">
+              <label for="editTarget">Edit target</label>
+              <select id="editTarget">
+                <option value="0">Pen</option>
+                <option value="1">Background</option>
+              </select>
+            </div>
+            <div id="editPointLabel" class="advanced__label"></div>
+            <div id="paramList" class="param-list"></div>
+            <div class="button-row">
+              <button id="resetCurrent" type="button">Reset</button>
+              <button id="resetAll" type="button">Reset All</button>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section">
+          <summary>Debug</summary>
+          <div class="settings-content">
+            <div class="control control--toggle">
+              <label for="debugToggle">Enable debug</label>
+              <input id="debugToggle" type="checkbox" />
+            </div>
+            <pre id="debugLog" class="debug__log" aria-live="polite"></pre>
+          </div>
+        </details>
+      </aside>
+
+      <!-- Hidden elements for compatibility -->
+      <div id="weaponStatus" class="weapon-status" role="status" aria-live="polite"></div>
+      <div id="status" class="status status--hidden" role="status" aria-live="polite"></div>
+      <div id="keyboardHint" class="hidden"></div>
+      <div id="actionList" class="hidden"></div>
+      <button id="swap" class="hidden" type="button"></button>
+      <button id="spawnBurst" class="hidden" type="button"></button>
+      <button id="spawnRing" class="hidden" type="button"></button>
+      <button id="wave" class="hidden" type="button"></button>
+      <button id="randomParams" class="hidden" type="button"></button>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
