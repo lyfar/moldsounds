@@ -3,6 +3,21 @@ import { PointsDataManager } from "./points.js";
 import { initControls } from "./controls.js";
 import { startSimulation } from "./sim.js";
 
+const updateAppHeight = () => {
+  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+  if (Number.isFinite(viewportHeight)) {
+    document.documentElement.style.setProperty("--app-height", `${viewportHeight}px`);
+  }
+};
+
+updateAppHeight();
+window.addEventListener("resize", updateAppHeight);
+window.addEventListener("orientationchange", updateAppHeight);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", updateAppHeight);
+  window.visualViewport.addEventListener("scroll", updateAppHeight);
+}
+
 const canvas = document.getElementById("gfx");
 const statusEl = document.getElementById("status");
 const debugLog = document.getElementById("debugLog");

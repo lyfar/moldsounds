@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
     <title>VOID ANNIHILATOR</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
@@ -10,6 +10,12 @@
     <div id="app">
       <canvas id="gfx" aria-label="Void Annihilator"></canvas>
       <div id="pen-indicator" aria-hidden="true"></div>
+      <div class="simple-tower" id="simpleTower">
+        <button id="simpleTowerButton" class="simple-tower__button" type="button">
+          <span class="simple-tower__ring" aria-hidden="true"></span>
+          <span class="simple-tower__text" data-role="simpleTowerLabel">Start</span>
+        </button>
+      </div>
 
       <!-- Game HUD - Top Left -->
       <div class="game-hud">
@@ -33,11 +39,26 @@
       <div id="flowControlHud" class="flow-control-hud">
         <div class="flow-indicator">
           <span class="flow-label">FLOW</span>
-          <span class="flow-value">X: 0.00 | Y: 0.00</span>
+          <span id="flowValue" class="flow-value">X: 0.00 | Y: 0.00</span>
         </div>
         <div class="flow-indicator">
           <span class="flow-label">INERTIA</span>
-          <span class="flow-value">0.50</span>
+          <span id="inertiaValue" class="flow-value">0.50</span>
+        </div>
+        <div class="flow-controls-compact">
+          <label class="flow-slider">
+            <span>X</span>
+            <input id="flowXMobile" type="range" min="-1" max="1" step="0.01" />
+          </label>
+          <label class="flow-slider">
+            <span>Y</span>
+            <input id="flowYMobile" type="range" min="-1" max="1" step="0.01" />
+          </label>
+          <label class="flow-slider">
+            <span>I</span>
+            <input id="inertiaMobile" type="range" min="0" max="1" step="0.01" />
+          </label>
+          <button id="flowReset" class="flow-reset" type="button">Center</button>
         </div>
         <div class="flow-hint">
           <kbd>W</kbd><kbd>S</kbd> Flow Y &nbsp;
@@ -72,16 +93,23 @@
         <div class="tower-panel__section" id="newTowerSection">
           <div class="tower-section-title">New Tower Settings</div>
           <div class="tower-control">
-            <label>Radius <span id="newTowerRadiusValue">0.15</span></label>
-            <input id="newTowerRadius" type="range" min="0.05" max="0.5" step="0.01" value="0.15" />
+            <label>Tower Type</label>
+            <div class="tower-type-toggle" role="group" aria-label="Tower type">
+              <button id="newTowerTypeHz" class="tower-type-btn tower-type-btn--active" type="button" aria-pressed="true">Hz</button>
+              <button id="newTowerTypeAudio" class="tower-type-btn" type="button" aria-pressed="false">Audio</button>
+            </div>
           </div>
           <div class="tower-control">
-            <label>Frequency <span id="newTowerFreqValue">440 Hz</span></label>
-            <input id="newTowerFreq" type="range" min="20" max="2000" step="1" value="440" />
+            <label>Radius <span id="newTowerRadiusValue">0.50</span></label>
+            <input id="newTowerRadius" type="range" min="0.05" max="0.5" step="0.01" value="0.5" />
           </div>
           <div class="tower-control">
-            <label>Strength <span id="newTowerStrengthValue">0.70</span></label>
-            <input id="newTowerStrength" type="range" min="0" max="1" step="0.01" value="0.7" />
+            <label>Frequency <span id="newTowerFreqValue">250 Hz</span></label>
+            <input id="newTowerFreq" type="range" min="20" max="2000" step="1" value="250" />
+          </div>
+          <div class="tower-control">
+            <label>Strength <span id="newTowerStrengthValue">0.20</span></label>
+            <input id="newTowerStrength" type="range" min="0" max="1" step="0.01" value="0.2" />
           </div>
           <div class="tower-control">
             <label>Pattern</label>
@@ -109,6 +137,27 @@
             <select id="editTowerPattern"></select>
           </div>
         </div>
+
+        <!-- Audio tower controls -->
+        <div class="tower-panel__section tower-panel__section--audio hidden" id="audioTowerSection">
+          <div class="tower-section-title">Audio Source</div>
+          <div class="tower-control tower-control--stack">
+            <label for="audioTowerFile">File</label>
+            <input id="audioTowerFile" type="file" accept="audio/*" />
+          </div>
+          <div class="tower-control tower-control--stack">
+            <label for="audioTowerUrl">URL</label>
+            <input id="audioTowerUrl" type="url" placeholder="https://example.com/track.mp3" />
+          </div>
+          <div class="tower-audio__row">
+            <button id="audioTowerLoadUrl" class="tower-action-btn tower-action-btn--neutral" type="button">Load URL</button>
+            <button id="audioTowerUseMic" class="tower-action-btn tower-action-btn--neutral" type="button">Use Mic</button>
+          </div>
+          <div class="tower-audio__status" id="audioTowerStatus">No audio loaded.</div>
+          <div class="tower-audio__meter">
+            <span id="audioTowerMeter"></span>
+          </div>
+        </div>
         
         <div class="tower-panel__actions">
           <button id="clearTowersBtn" class="tower-action-btn" type="button">Clear All</button>
@@ -126,170 +175,241 @@
 
       <!-- Quick Actions - Top Right -->
       <div class="quick-actions">
-        <button id="quantumShift" class="quick-action" type="button">
-          <kbd>Q</kbd>
-          <span>Quantum Shift</span>
-        </button>
         <button id="nextLevel" class="quick-action quick-action--primary" type="button">
           <kbd>Space</kbd>
           <span>Next Level</span>
         </button>
       </div>
 
+      <!-- Mobile tower dock -->
+      <div class="tower-dock" id="towerDock">
+        <button id="mobileToggleTowers" class="tower-dock__button" type="button" aria-pressed="false">
+          Towers
+        </button>
+      </div>
+
       <!-- Settings Panel - Right (Collapsed by default) -->
       <aside class="settings-panel">
-        <details class="settings-section">
-          <summary>Settings</summary>
+        <details class="settings-section settings-section--core" open>
+          <summary>Core</summary>
           <div class="settings-content">
-            <div class="control">
-              <label for="penSize">Pen size</label>
-              <input id="penSize" type="range" min="0.02" max="0.85" step="0.01" />
+            <div class="control-group">
+              <div class="control-group__label">Brush</div>
+              <div class="control">
+                <label for="penSize">Pen size</label>
+                <input id="penSize" type="range" min="0.02" max="0.85" step="0.01" />
+              </div>
+              <div class="control control--toggle">
+                <label for="showPen">Show pen</label>
+                <input id="showPen" type="checkbox" checked />
+              </div>
             </div>
-            <div class="control">
-              <label for="colorMode">Color mode</label>
-              <select id="colorMode"></select>
+            <div class="control-group">
+              <div class="control-group__label">Visual</div>
+              <div class="control">
+                <label for="colorMode">Color mode</label>
+                <select id="colorMode"></select>
+              </div>
             </div>
-            <div class="control">
-              <label for="quality">Quality (reload)</label>
-              <select id="quality"></select>
+            <div class="control-group">
+              <div class="control-group__label">Prime Field</div>
+              <div class="control control--toggle">
+                <label for="primeMode">Prime mode</label>
+                <input id="primeMode" type="checkbox" />
+              </div>
+              <div class="control">
+                <label for="primeSpeed">Prime speed <span id="primeSpeedValue">0.35x</span></label>
+                <input id="primeSpeed" type="range" min="0" max="1" step="0.01" value="0.35" />
+              </div>
+              <div class="control">
+                <label for="primeStrength">Prime strength <span id="primeStrengthValue">0.60</span></label>
+                <input id="primeStrength" type="range" min="0.1" max="1.2" step="0.01" value="0.6" />
+              </div>
+              <div class="control">
+                <label for="primeSpread">Prime spread <span id="primeSpreadValue">0.45</span></label>
+                <input id="primeSpread" type="range" min="0.2" max="0.7" step="0.01" value="0.45" />
+              </div>
             </div>
-            <div class="control">
-              <label for="particleDensity">
-                Particle density <span id="particleDensityValue">2.0x</span>
-              </label>
-              <input id="particleDensity" type="range" min="0.5" max="5.0" step="0.1" />
+            <div class="control-group">
+              <div class="control-group__label">Performance</div>
+              <div class="control">
+                <label for="quality">Quality (reload)</label>
+                <select id="quality"></select>
+              </div>
+              <div class="control">
+                <label for="particleDensity">
+                  Particle density <span id="particleDensityValue">2.0x</span>
+                </label>
+                <input id="particleDensity" type="range" min="0.5" max="5.0" step="0.1" />
+              </div>
+              <div class="control control--info" id="particleInfo">
+                Current: ~1M particles
+              </div>
             </div>
-            <div class="control control--info" id="particleInfo">
-              Current: ~1M particles
+            <div class="control-group">
+              <div class="control-group__label">Audio</div>
+              <div class="control">
+                <label for="weaponVolume">
+                  Sound volume <span id="weaponVolumeValue">50%</span>
+                </label>
+                <input id="weaponVolume" type="range" min="0" max="1" step="0.01" />
+              </div>
             </div>
-            <div class="control">
-              <label for="weaponVolume">
-                Sound volume <span id="weaponVolumeValue">50%</span>
-              </label>
-              <input id="weaponVolume" type="range" min="0" max="1" step="0.01" />
+            <div class="control-group">
+              <div class="control-group__label">Settings JSON</div>
+              <div class="button-row">
+                <button id="exportSettings" type="button">Export JSON</button>
+                <button id="importSettings" type="button">Import JSON</button>
+              </div>
+              <input id="settingsFile" type="file" accept="application/json,.json" class="hidden" />
             </div>
-            <div class="control control--toggle">
-              <label for="showPen">Show pen</label>
-              <input id="showPen" type="checkbox" checked />
+            <div class="control-group">
+              <div class="control-group__label">Actions</div>
+              <div class="button-row">
+                <button id="randomize" type="button">Random</button>
+                <button id="nextColor" type="button">Color</button>
+                <button id="quantumShift" type="button">Remix</button>
+                <button id="saveImage" type="button">Save</button>
+              </div>
             </div>
           </div>
         </details>
 
-        <details class="settings-section">
+        <details class="settings-section settings-section--flow">
+          <summary>Flow</summary>
+          <div class="settings-content">
+            <div class="control-group">
+              <div class="control-group__label">Forces</div>
+              <div class="control">
+                <label for="inertia">Inertia</label>
+                <input id="inertia" type="range" min="0" max="1" step="0.01" />
+              </div>
+              <div class="control">
+                <label for="flowX">Flow X</label>
+                <input id="flowX" type="range" min="-1" max="1" step="0.01" />
+              </div>
+              <div class="control">
+                <label for="flowY">Flow Y</label>
+                <input id="flowY" type="range" min="-1" max="1" step="0.01" />
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section settings-section--render">
           <summary>Render</summary>
           <div class="settings-content">
-            <div class="control">
-              <label for="depositFactor">Deposit <span id="depositFactorValue">0.003</span></label>
-              <input id="depositFactor" type="range" min="0" max="1" step="0.001" />
+            <div class="control-group">
+              <div class="control-group__label">Trails</div>
+              <div class="control">
+                <label for="depositFactor">Deposit <span id="depositFactorValue">0.003</span></label>
+                <input id="depositFactor" type="range" min="0" max="1" step="0.001" />
+              </div>
+              <div class="control">
+                <label for="decayFactor">Decay <span id="decayFactorValue">0.750</span></label>
+                <input id="decayFactor" type="range" min="0" max="1" step="0.001" />
+              </div>
+              <div class="control">
+                <label for="blurPasses">Blur passes <span id="blurPassesValue">1</span></label>
+                <input id="blurPasses" type="range" min="0" max="20" step="1" />
+              </div>
             </div>
-            <div class="control">
-              <label for="decayFactor">Decay <span id="decayFactorValue">0.750</span></label>
-              <input id="decayFactor" type="range" min="0" max="1" step="0.001" />
-            </div>
-            <div class="control">
-              <label for="blurPasses">Blur passes <span id="blurPassesValue">1</span></label>
-              <input id="blurPasses" type="range" min="0" max="20" step="1" />
-            </div>
-            <div class="control">
-              <label for="drawOpacity">Draw opacity <span id="drawOpacityValue">1.000</span></label>
-              <input id="drawOpacity" type="range" min="0" max="1" step="0.001" />
-            </div>
-            <div class="control">
-              <label for="fillOpacity">Fill opacity <span id="fillOpacityValue">0.000</span></label>
-              <input id="fillOpacity" type="range" min="0" max="1" step="0.001" />
-            </div>
-            <div class="control">
-              <label for="dotSize">Dot size <span id="dotSizeValue">10.0</span></label>
-              <input id="dotSize" type="range" min="0" max="50" step="0.1" />
+            <div class="control-group">
+              <div class="control-group__label">Ink</div>
+              <div class="control">
+                <label for="drawOpacity">Draw opacity <span id="drawOpacityValue">1.000</span></label>
+                <input id="drawOpacity" type="range" min="0" max="1" step="0.001" />
+              </div>
+              <div class="control">
+                <label for="fillOpacity">Fill opacity <span id="fillOpacityValue">0.000</span></label>
+                <input id="fillOpacity" type="range" min="0" max="1" step="0.001" />
+              </div>
+              <div class="control">
+                <label for="dotSize">Dot size <span id="dotSizeValue">10.0</span></label>
+                <input id="dotSize" type="range" min="0" max="50" step="0.1" />
+              </div>
             </div>
           </div>
         </details>
 
-        <details class="settings-section">
+        <details class="settings-section settings-section--presets">
           <summary>Presets</summary>
           <div class="settings-content">
-            <div class="control">
-              <label for="penPoint">Pen preset</label>
-              <select id="penPoint"></select>
+            <div class="control-group">
+              <div class="control-group__label">Current</div>
+              <div class="control">
+                <label for="penPoint">Pen preset</label>
+                <select id="penPoint"></select>
+              </div>
+              <div class="control">
+                <label for="bgPoint">Background preset</label>
+                <select id="bgPoint"></select>
+              </div>
+              <div class="button-row">
+                <button id="exportPreset" type="button">Export JSON</button>
+                <button id="importPreset" type="button">Import JSON</button>
+              </div>
+              <input id="presetFile" type="file" accept="application/json,.json" class="hidden" />
             </div>
-            <div class="control">
-              <label for="bgPoint">Background preset</label>
-              <select id="bgPoint"></select>
-            </div>
-            <div class="button-row">
-              <button id="exportPreset" type="button">Export JSON</button>
-              <button id="importPreset" type="button">Import JSON</button>
-            </div>
-            <input id="presetFile" type="file" accept="application/json,.json" class="hidden" />
-            <div class="control">
-              <label for="presetLibrary">36 Points exports</label>
-              <select id="presetLibrary"></select>
-            </div>
-            <div class="control">
-              <label for="presetApplyTarget">Apply to</label>
-              <select id="presetApplyTarget">
-                <option value="2">Both</option>
-                <option value="0">Pen</option>
-                <option value="1">Background</option>
-              </select>
-            </div>
-            <div class="button-row">
-              <button id="applyPresetBtn" type="button">Apply preset</button>
-            </div>
-            <div id="presetInfo" class="control control--info">Preset library ready.</div>
-          </div>
-        </details>
-
-        <details class="settings-section">
-          <summary>Advanced</summary>
-          <div class="settings-content">
-            <div class="control">
-              <label for="inertia">Inertia</label>
-              <input id="inertia" type="range" min="0" max="1" step="0.01" />
-            </div>
-            <div class="control">
-              <label for="flowX">Flow X</label>
-              <input id="flowX" type="range" min="-1" max="1" step="0.01" />
-            </div>
-            <div class="control">
-              <label for="flowY">Flow Y</label>
-              <input id="flowY" type="range" min="-1" max="1" step="0.01" />
-            </div>
-            <div class="button-row">
-              <button id="randomize" type="button">Random</button>
-              <button id="nextColor" type="button">Color</button>
-              <button id="saveImage" type="button">Save</button>
+            <div class="control-group">
+              <div class="control-group__label">Library</div>
+              <div class="control">
+                <label for="presetLibrary">36 Points exports</label>
+                <select id="presetLibrary"></select>
+              </div>
+              <div class="control">
+                <label for="presetApplyTarget">Apply to</label>
+                <select id="presetApplyTarget">
+                  <option value="2">Both</option>
+                  <option value="0">Pen</option>
+                  <option value="1">Background</option>
+                </select>
+              </div>
+              <div class="button-row">
+                <button id="applyPresetBtn" type="button">Apply preset</button>
+              </div>
+              <div id="presetInfo" class="control control--info">Preset library ready.</div>
             </div>
           </div>
         </details>
 
-        <details class="settings-section">
+        <details class="settings-section settings-section--tuning">
           <summary>Tuning</summary>
           <div class="settings-content">
-            <div class="control">
-              <label for="editTarget">Edit target</label>
-              <select id="editTarget">
-                <option value="0">Pen</option>
-                <option value="1">Background</option>
-              </select>
-            </div>
-            <div id="editPointLabel" class="advanced__label"></div>
-            <div id="paramList" class="param-list"></div>
-            <div class="button-row">
-              <button id="resetCurrent" type="button">Reset</button>
-              <button id="resetAll" type="button">Reset All</button>
+            <div class="control-group">
+              <div class="control-group__label">Target</div>
+              <div class="control">
+                <label for="editTarget">Edit target</label>
+                <select id="editTarget">
+                  <option value="0">Pen</option>
+                  <option value="1">Background</option>
+                </select>
+              </div>
+              <div id="editPointLabel" class="advanced__label"></div>
+              <div id="paramList" class="param-list"></div>
+              <div class="button-row">
+                <button id="resetCurrent" type="button">Reset</button>
+                <button id="resetAll" type="button">Reset All</button>
+              </div>
             </div>
           </div>
         </details>
 
-        <details class="settings-section">
+        <details class="settings-section settings-section--debug">
           <summary>Debug</summary>
           <div class="settings-content">
-            <div class="control control--toggle">
-              <label for="debugToggle">Enable debug</label>
-              <input id="debugToggle" type="checkbox" />
+            <div class="control-group">
+              <div class="control-group__label">Diagnostics</div>
+              <div class="control control--toggle">
+                <label for="debugToggle">Enable debug</label>
+                <input id="debugToggle" type="checkbox" />
+              </div>
+              <div class="control">
+                <label for="viewToggle">Mode</label>
+                <button id="viewToggle" class="view-toggle" type="button" aria-pressed="false">Simple</button>
+              </div>
+              <pre id="debugLog" class="debug__log" aria-live="polite"></pre>
             </div>
-            <pre id="debugLog" class="debug__log" aria-live="polite"></pre>
           </div>
         </details>
       </aside>

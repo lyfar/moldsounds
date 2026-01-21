@@ -1,43 +1,27 @@
 import {
   COLOR_MODES,
   QUALITY_PRESETS,
-  PARAMS_DIMENSION,
-  PARAMETERS_MATRIX,
-  POINT_LABELS,
   WEAPON_MODES,
   SOUND_WAVE_MODES,
   TOWER_SETTINGS,
 } from "./config.js";
 import { clamp, lerp, setRandomSpawn, setVortexSpawn, setPulseSpawn } from "./utils.js";
+import { initTowerControls } from "./towerControls.js";
+import { initPresetControls } from "./presetControls.js";
 import {
   playWeaponSound,
   playQuantumShift,
   playNextLevel,
   playSoundToggle,
   playWeaponSelect,
-  setMasterVolume,
-  ensureAudioContext
+  setMasterVolume
 } from "./audio.js";
-
-const PRESET_SCALING_BY_NAME = (() => {
-  const map = new Map();
-  const scalingIndex = PARAMS_DIMENSION - 1;
-  for (let i = 0; i < POINT_LABELS.length; i += 1) {
-    const name = POINT_LABELS[i];
-    const factor = PARAMETERS_MATRIX[i]?.[scalingIndex];
-    if (!name || !Number.isFinite(factor)) {
-      continue;
-    }
-    map.set(name.toLowerCase(), factor);
-  }
-  return map;
-})();
 
 export function initControls(state, pointsManager, settings, qualityKey) {
   // Game state
   let currentLevel = 1;
   let totalShots = 0;
-  let presetLibraryEntries = [];
+  let baseL2Action = state.L2Action ?? 0;
   
   // DOM Elements - Game HUD
   const levelNumber = document.getElementById("levelNumber");
@@ -46,16 +30,20 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   const nextLevelBtn = document.getElementById("nextLevel");
   
   // DOM Elements - Settings
-  const penSelect = document.getElementById("penPoint");
-  const bgSelect = document.getElementById("bgPoint");
-  const exportPreset = document.getElementById("exportPreset");
-  const importPreset = document.getElementById("importPreset");
-  const presetFile = document.getElementById("presetFile");
   const penSize = document.getElementById("penSize");
+  const penSizeQuick = document.getElementById("penSizeQuick");
+  const penSizeQuickValue = document.getElementById("penSizeQuickValue");
   const inertia = document.getElementById("inertia");
   const flowX = document.getElementById("flowX");
   const flowY = document.getElementById("flowY");
+  const flowValue = document.getElementById("flowValue");
+  const inertiaValue = document.getElementById("inertiaValue");
+  const flowXMobile = document.getElementById("flowXMobile");
+  const flowYMobile = document.getElementById("flowYMobile");
+  const inertiaMobile = document.getElementById("inertiaMobile");
+  const flowReset = document.getElementById("flowReset");
   const colorMode = document.getElementById("colorMode");
+  const viewToggle = document.getElementById("viewToggle");
   const quality = document.getElementById("quality");
   const showPen = document.getElementById("showPen");
   const depositFactor = document.getElementById("depositFactor");
@@ -70,10 +58,6 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   const drawOpacityValue = document.getElementById("drawOpacityValue");
   const fillOpacityValue = document.getElementById("fillOpacityValue");
   const dotSizeValue = document.getElementById("dotSizeValue");
-  const presetLibrary = document.getElementById("presetLibrary");
-  const presetInfo = document.getElementById("presetInfo");
-  const presetApplyTarget = document.getElementById("presetApplyTarget");
-  const applyPresetBtn = document.getElementById("applyPresetBtn");
   const debugToggle = document.getElementById("debugToggle");
   const debugLog = document.getElementById("debugLog");
   const keyboardHint = document.getElementById("keyboardHint");
@@ -88,41 +72,57 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   const soundWaveMode = document.getElementById("soundWaveMode");
   const weaponVolume = document.getElementById("weaponVolume");
   const weaponVolumeValue = document.getElementById("weaponVolumeValue");
+  const primeMode = document.getElementById("primeMode");
+  const primeSpeed = document.getElementById("primeSpeed");
+  const primeSpeedValue = document.getElementById("primeSpeedValue");
+  const primeStrength = document.getElementById("primeStrength");
+  const primeStrengthValue = document.getElementById("primeStrengthValue");
+  const primeSpread = document.getElementById("primeSpread");
+  const primeSpreadValue = document.getElementById("primeSpreadValue");
+  const exportSettings = document.getElementById("exportSettings");
+  const importSettings = document.getElementById("importSettings");
+  const settingsFile = document.getElementById("settingsFile");
+
+  const presetUi = {
+    penSelect: document.getElementById("penPoint"),
+    bgSelect: document.getElementById("bgPoint"),
+    exportPreset: document.getElementById("exportPreset"),
+    importPreset: document.getElementById("importPreset"),
+    presetFile: document.getElementById("presetFile"),
+    presetLibrary: document.getElementById("presetLibrary"),
+    presetInfo: document.getElementById("presetInfo"),
+    presetApplyTarget: document.getElementById("presetApplyTarget"),
+    applyPresetBtn: document.getElementById("applyPresetBtn"),
+    editTarget: document.getElementById("editTarget"),
+    editPointLabel: document.getElementById("editPointLabel"),
+    paramList: document.getElementById("paramList"),
+    resetCurrent: document.getElementById("resetCurrent"),
+    resetAll: document.getElementById("resetAll"),
+    penSize,
+    penSizeQuick,
+    penSizeQuickValue,
+    inertia,
+    flowX,
+    flowY,
+    colorMode,
+    showPen,
+    depositFactor,
+    decayFactor,
+    blurPasses,
+    drawOpacity,
+    fillOpacity,
+    dotSize,
+  };
+
+  const mobileToggleTowers = document.getElementById("mobileToggleTowers");
+  const mobileToggleSettings = document.getElementById("mobileToggleSettings");
+  const mobileBackdrop = document.getElementById("mobileBackdrop");
+  const placeTowerBtn = document.getElementById("placeTowerBtn");
   
   // Annihilator panel elements (legacy)
   const annihilatorPanel = document.getElementById("annihilatorPanel");
   const annihilatorButton = document.getElementById("annihilatorButton");
   const annihilatorStatus = document.getElementById("annihilatorStatus");
-
-  // Tower panel elements
-  const towerPanel = document.getElementById("towerPanel");
-  const towerCountEl = document.getElementById("towerCount");
-  const placeTowerBtn = document.getElementById("placeTowerBtn");
-  const towerListEl = document.getElementById("towerList");
-  const clearTowersBtn = document.getElementById("clearTowersBtn");
-  const newTowerRadius = document.getElementById("newTowerRadius");
-  const newTowerFreq = document.getElementById("newTowerFreq");
-  const newTowerStrength = document.getElementById("newTowerStrength");
-  const newTowerPattern = document.getElementById("newTowerPattern");
-  const newTowerRadiusValue = document.getElementById("newTowerRadiusValue");
-  const newTowerFreqValue = document.getElementById("newTowerFreqValue");
-  const newTowerStrengthValue = document.getElementById("newTowerStrengthValue");
-  const newTowerSection = document.getElementById("newTowerSection");
-  
-  // Edit tower elements
-  const editTowerSection = document.getElementById("editTowerSection");
-  const editTowerNum = document.getElementById("editTowerNum");
-  const editTowerRadius = document.getElementById("editTowerRadius");
-  const editTowerFreq = document.getElementById("editTowerFreq");
-  const editTowerStrength = document.getElementById("editTowerStrength");
-  const editTowerPattern = document.getElementById("editTowerPattern");
-  const editTowerRadiusValue = document.getElementById("editTowerRadiusValue");
-  const editTowerFreqValue = document.getElementById("editTowerFreqValue");
-  const editTowerStrengthValue = document.getElementById("editTowerStrengthValue");
-
-  const editTarget = document.getElementById("editTarget");
-  const editPointLabel = document.getElementById("editPointLabel");
-  const paramList = document.getElementById("paramList");
 
   const randomize = document.getElementById("randomize");
   const swap = document.getElementById("swap");
@@ -131,8 +131,6 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   const wave = document.getElementById("wave");
   const nextColor = document.getElementById("nextColor");
   const saveImage = document.getElementById("saveImage");
-  const resetCurrent = document.getElementById("resetCurrent");
-  const resetAll = document.getElementById("resetAll");
   
   // Update game HUD
   const updateGameHUD = () => {
@@ -146,40 +144,178 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   };
   const randomParams = document.getElementById("randomParams");
 
-  penSelect.innerHTML = "";
-  bgSelect.innerHTML = "";
+  const VIEW_STORAGE_KEY = "physarum:viewMode";
+  const applyViewMode = (mode, persist = false) => {
+    const isExpert = mode === "expert";
+    document.body.classList.toggle("view-expert", isExpert);
+    if (viewToggle) {
+      viewToggle.textContent = isExpert ? "Expert" : "Simple";
+      viewToggle.setAttribute("aria-pressed", String(isExpert));
+    }
+    if (!isExpert) {
+      document.body.classList.remove("mobile-show-towers", "mobile-show-settings", "mobile-panel-open");
+    }
+    if (persist) {
+      try {
+        window.localStorage?.setItem(VIEW_STORAGE_KEY, isExpert ? "expert" : "simple");
+      } catch (error) {
+        console.warn("Failed to persist view mode", error);
+      }
+    }
+  };
 
-  for (let i = 0; i < pointsManager.getNumberOfPoints(); i += 1) {
-    const label = pointsManager.getPointName(i);
-    const option = document.createElement("option");
-    option.value = String(i);
-    option.textContent = label;
-    penSelect.appendChild(option.cloneNode(true));
-    bgSelect.appendChild(option);
+  const isSimpleMode = () => !document.body.classList.contains("view-expert");
+
+  try {
+    const storedView = window.localStorage?.getItem(VIEW_STORAGE_KEY);
+    applyViewMode(storedView === "expert" ? "expert" : "simple");
+  } catch (error) {
+    applyViewMode("simple");
   }
 
-  penSelect.value = String(pointsManager.selectedIndices[0]);
-  bgSelect.value = String(pointsManager.selectedIndices[1]);
+  if (viewToggle) {
+    viewToggle.addEventListener("click", () => {
+      const isExpert = document.body.classList.contains("view-expert");
+      applyViewMode(isExpert ? "simple" : "expert", true);
+    });
+  }
 
-  penSelect.addEventListener("change", () => {
-    pointsManager.setSelectedIndex(0, Number(penSelect.value));
+  const SIMPLE_TOWER_RULES = {
+    health: Number(TOWER_SETTINGS.defaultHealth ?? 100),
+    radiusMin: 0.4,
+    radiusMax: 0.5,
+    frequencyMin: 180,
+    frequencyMax: 520,
+    strengthMin: 0.15,
+    strengthMax: 0.35,
+  };
+
+  const SIMPLE_WEAPON_DAMAGE = [14, 12, 10, 16, 18];
+
+  const getSimpleTowerTarget = () => {
+    if (!state.towers.length) {
+      return null;
+    }
+    const defaultTower = state.towers.find((tower) => tower?.isDefaultTrack);
+    return defaultTower || state.towers[0];
+  };
+
+  const ensureTowerHealth = (tower) => {
+    const maxHealth = Number.isFinite(tower.maxHealth)
+      ? tower.maxHealth
+      : SIMPLE_TOWER_RULES.health;
+    if (!Number.isFinite(tower.maxHealth)) {
+      tower.maxHealth = maxHealth;
+    }
+    if (!Number.isFinite(tower.health)) {
+      tower.health = maxHealth;
+    }
+  };
+
+  const applyTowerStats = (tower, stats) => {
+    tower.radius = stats.radius;
+    tower.frequency = stats.frequency;
+    tower.strength = stats.strength;
+    tower.pattern = stats.pattern;
+    if (tower.audio) {
+      tower.baseRadius = stats.radius;
+      tower.baseStrength = stats.strength;
+    }
+  };
+
+  const rerollSimpleTower = (tower) => {
+    const radiusRaw =
+      SIMPLE_TOWER_RULES.radiusMin +
+      Math.random() * (SIMPLE_TOWER_RULES.radiusMax - SIMPLE_TOWER_RULES.radiusMin);
+    const radius = clamp(
+      radiusRaw,
+      TOWER_SETTINGS.minRadius,
+      TOWER_SETTINGS.maxRadius
+    );
+    const frequency = Math.round(
+      SIMPLE_TOWER_RULES.frequencyMin +
+        Math.random() * (SIMPLE_TOWER_RULES.frequencyMax - SIMPLE_TOWER_RULES.frequencyMin)
+    );
+    const strength = Number(
+      (
+        SIMPLE_TOWER_RULES.strengthMin +
+        Math.random() * (SIMPLE_TOWER_RULES.strengthMax - SIMPLE_TOWER_RULES.strengthMin)
+      ).toFixed(2)
+    );
+    const pattern =
+      SOUND_WAVE_MODES.length > 0
+        ? Math.floor(Math.random() * SOUND_WAVE_MODES.length)
+        : 0;
+    applyTowerStats(tower, { radius, frequency, strength, pattern });
+  };
+
+  const advanceSimpleTowerLevel = (tower) => {
+    rerollSimpleTower(tower);
+    tower.health = tower.maxHealth;
+    currentLevel += 1;
+    updateGameHUD();
+    pointsManager.createRandomParameters();
     state.transitionTriggerTime = state.time;
     updateAdvancedValues();
-  });
+    playNextLevel(getCurrentPointValues());
+  };
 
-  bgSelect.addEventListener("change", () => {
-    pointsManager.setSelectedIndex(1, Number(bgSelect.value));
-    state.transitionTriggerTime = state.time;
-    updateAdvancedValues();
-  });
+  const applySimpleTowerDamage = (weaponIndex) => {
+    if (!isSimpleMode()) {
+      return;
+    }
+    const tower = getSimpleTowerTarget();
+    if (!tower) {
+      return;
+    }
+    ensureTowerHealth(tower);
+    const damage = SIMPLE_WEAPON_DAMAGE[weaponIndex] ?? 12;
+    tower.health = Math.max(0, tower.health - damage);
+    if (tower.health <= 0) {
+      advanceSimpleTowerLevel(tower);
+    }
+  };
+
+  const updatePenQuickLabel = (value) => {
+    if (penSizeQuickValue) {
+      penSizeQuickValue.textContent = value.toFixed(2);
+    }
+  };
+
+  const syncPenSizeInputs = (value) => {
+    if (penSize) {
+      penSize.value = String(value);
+    }
+    if (penSizeQuick) {
+      penSizeQuick.value = String(value);
+    }
+    updatePenQuickLabel(value);
+  };
 
   penSize.min = String(settings.penSizeMin);
   penSize.max = String(settings.penSizeMax);
   penSize.value = String(state.targetActionAreaSizeSigma);
+  if (penSizeQuick) {
+    penSizeQuick.min = penSize.min;
+    penSizeQuick.max = penSize.max;
+    penSizeQuick.step = penSize.step;
+    penSizeQuick.value = String(state.targetActionAreaSizeSigma);
+  }
+  updatePenQuickLabel(state.targetActionAreaSizeSigma);
   penSize.addEventListener("input", () => {
-    state.targetActionAreaSizeSigma = Number(penSize.value);
+    const next = Number(penSize.value);
+    state.targetActionAreaSizeSigma = next;
     state.latestSigmaChangeTime = state.time;
+    syncPenSizeInputs(next);
   });
+  if (penSizeQuick) {
+    penSizeQuick.addEventListener("input", () => {
+      const next = Number(penSizeQuick.value);
+      state.targetActionAreaSizeSigma = next;
+      state.latestSigmaChangeTime = state.time;
+      syncPenSizeInputs(next);
+    });
+  }
 
   inertia.value = String(state.L2Action);
   inertia.addEventListener("input", () => {
@@ -195,6 +331,46 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   flowY.addEventListener("input", () => {
     state.moveBiasActionY = Number(flowY.value);
   });
+
+  if (flowXMobile) {
+    flowXMobile.value = String(state.moveBiasActionX);
+    flowXMobile.addEventListener("input", () => {
+      state.moveBiasActionX = Number(flowXMobile.value);
+      if (flowX) flowX.value = String(state.moveBiasActionX);
+      updateFlowControlHud();
+    });
+  }
+
+  if (flowYMobile) {
+    flowYMobile.value = String(state.moveBiasActionY);
+    flowYMobile.addEventListener("input", () => {
+      state.moveBiasActionY = Number(flowYMobile.value);
+      if (flowY) flowY.value = String(state.moveBiasActionY);
+      updateFlowControlHud();
+    });
+  }
+
+  if (inertiaMobile) {
+    inertiaMobile.value = String(state.L2Action ?? 0);
+    inertiaMobile.addEventListener("input", () => {
+      state.L2Action = Number(inertiaMobile.value);
+      baseL2Action = state.L2Action;
+      if (inertia) inertia.value = String(state.L2Action);
+      updateFlowControlHud();
+    });
+  }
+
+  if (flowReset) {
+    flowReset.addEventListener("click", () => {
+      state.moveBiasActionX = 0;
+      state.moveBiasActionY = 0;
+      if (flowX) flowX.value = "0";
+      if (flowY) flowY.value = "0";
+      if (flowXMobile) flowXMobile.value = "0";
+      if (flowYMobile) flowYMobile.value = "0";
+      updateFlowControlHud();
+    });
+  }
 
   colorMode.innerHTML = "";
   for (const mode of COLOR_MODES) {
@@ -358,6 +534,42 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     state.displayPen = showPen.checked;
   });
 
+  if (primeMode) {
+    primeMode.checked = state.primeFieldEnabled;
+    primeMode.addEventListener("change", () => {
+      state.primeFieldEnabled = primeMode.checked;
+      updatePrimeUi();
+    });
+  }
+
+  if (primeSpeed) {
+    primeSpeed.value = String(state.primeFieldSpeed);
+    primeSpeed.addEventListener("input", () => {
+      state.primeFieldSpeed = clamp(Number(primeSpeed.value), 0, 1);
+      updatePrimeUi();
+    });
+  }
+
+  if (primeStrength) {
+    primeStrength.value = String(state.primeFieldStrength);
+    primeStrength.addEventListener("input", () => {
+      const min = Number(primeStrength.min || 0.1);
+      const max = Number(primeStrength.max || 1.2);
+      state.primeFieldStrength = clamp(Number(primeStrength.value), min, max);
+      updatePrimeUi();
+    });
+  }
+
+  if (primeSpread) {
+    primeSpread.value = String(state.primeFieldSpread);
+    primeSpread.addEventListener("input", () => {
+      const min = Number(primeSpread.min || 0.2);
+      const max = Number(primeSpread.max || 0.7);
+      state.primeFieldSpread = clamp(Number(primeSpread.value), min, max);
+      updatePrimeUi();
+    });
+  }
+
   if (soundFrequency) {
     soundFrequency.min = "20";
     soundFrequency.max = "2000";
@@ -456,6 +668,33 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     }
   };
 
+  const updatePrimeUi = () => {
+    const enabled = state.primeFieldEnabled;
+    if (primeMode) {
+      primeMode.checked = enabled;
+    }
+    if (primeSpeedValue) {
+      primeSpeedValue.textContent = `${state.primeFieldSpeed.toFixed(2)}x`;
+    }
+    if (primeStrengthValue) {
+      primeStrengthValue.textContent = state.primeFieldStrength.toFixed(2);
+    }
+    if (primeSpreadValue) {
+      primeSpreadValue.textContent = state.primeFieldSpread.toFixed(2);
+    }
+    if (primeSpeed) {
+      primeSpeed.disabled = !enabled;
+    }
+    if (primeStrength) {
+      primeStrength.disabled = !enabled;
+    }
+    if (primeSpread) {
+      primeSpread.disabled = !enabled;
+    }
+  };
+
+  updatePrimeUi();
+
   const setSoundEnabled = (enabled) => {
     state.soundEnabled = enabled;
     // Play feedback sound
@@ -494,14 +733,8 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     });
   }
 
-  const paramControls = [];
   const weaponButtons = [];
   const actionButtons = [];
-
-  const syncPointSelectors = () => {
-    penSelect.value = String(pointsManager.selectedIndices[0]);
-    bgSelect.value = String(pointsManager.selectedIndices[1]);
-  };
 
   const saveSnapshot = () => {
     const link = document.createElement("a");
@@ -529,27 +762,17 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       }, 2000);
     };
   })();
-
-  const buildPresetExport = () => ({
-    version: 1,
-    type: "interactive-physarum",
-    generatedAt: new Date().toISOString(),
-    points: pointsManager.currentPointsData.map((row) => row.slice()),
-    selectedIndices: pointsManager.selectedIndices.slice(),
-    settings: {
-      penSize: state.targetActionAreaSizeSigma,
-      inertia: state.L2Action,
-      flowX: state.moveBiasActionX,
-      flowY: state.moveBiasActionY,
-      colorMode: state.colorModeType,
-      showPen: state.displayPen,
-      depositFactor: settings.depositFactor,
-      decayFactor: settings.decayFactor,
-      blurPasses: settings.blurPasses,
-      drawOpacity: settings.drawOpacity,
-      fillOpacity: settings.fillOpacity,
-      dotSize: settings.dotSize,
+  const { updateAdvancedValues, syncPointSelectors, applyPresetSettings } = initPresetControls({
+    state,
+    pointsManager,
+    settings,
+    ui: presetUi,
+    updateRenderValues,
+    updateFlowControlHud,
+    onInertiaChange: (value) => {
+      baseL2Action = value;
     },
+    flashStatus,
   });
 
   const downloadJson = (payload, filename) => {
@@ -562,177 +785,203 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     URL.revokeObjectURL(url);
   };
 
-  const applyPresetSettings = (settingsData) => {
+  const buildSettingsExport = () => {
+    const currentDensity = particleDensity
+      ? Number(particleDensity.value)
+      : QUALITY_PRESETS[qualityKey].particleDensity;
+    const currentVolume = weaponVolume
+      ? Number(weaponVolume.value)
+      : settings.weaponSoundVolume ?? 0.5;
+    return {
+      version: 1,
+      type: "interactive-physarum-settings",
+      generatedAt: new Date().toISOString(),
+      settings: {
+        penSize: state.targetActionAreaSizeSigma,
+        inertia: state.L2Action,
+        flowX: state.moveBiasActionX,
+        flowY: state.moveBiasActionY,
+        colorMode: state.colorModeType,
+        showPen: state.displayPen,
+        depositFactor: settings.depositFactor,
+        decayFactor: settings.decayFactor,
+        blurPasses: settings.blurPasses,
+        drawOpacity: settings.drawOpacity,
+        fillOpacity: settings.fillOpacity,
+        dotSize: settings.dotSize,
+        primeFieldEnabled: state.primeFieldEnabled,
+        primeFieldSpeed: state.primeFieldSpeed,
+        primeFieldStrength: state.primeFieldStrength,
+        primeFieldSpread: state.primeFieldSpread,
+        weaponVolume: currentVolume,
+        quality: quality ? quality.value : qualityKey,
+        particleDensity: currentDensity,
+        penIndex: pointsManager.selectedIndices[0],
+        bgIndex: pointsManager.selectedIndices[1],
+      },
+    };
+  };
+
+  const applySettingsImport = (settingsData, options = {}) => {
+    const { skipReload = false, silent = false } = options;
     if (!settingsData || typeof settingsData !== "object") {
+      flashStatus("Invalid settings JSON.");
       return;
     }
 
-    if (Number.isFinite(settingsData.penSize) && penSize) {
-      const min = Number(penSize.min);
-      const max = Number(penSize.max);
-      const next = clamp(settingsData.penSize, min, max);
-      state.targetActionAreaSizeSigma = next;
-      state.latestSigmaChangeTime = state.time;
-      penSize.value = String(next);
+    applyPresetSettings(settingsData);
+
+    if (typeof settingsData.primeFieldEnabled === "boolean") {
+      state.primeFieldEnabled = settingsData.primeFieldEnabled;
+      if (primeMode) {
+        primeMode.checked = state.primeFieldEnabled;
+      }
     }
 
-    if (Number.isFinite(settingsData.inertia) && inertia) {
-      state.L2Action = clamp(settingsData.inertia, 0, 1);
-      inertia.value = String(state.L2Action);
-      baseL2Action = state.L2Action;
+    if (Number.isFinite(settingsData.primeFieldSpeed)) {
+      const next = clamp(Number(settingsData.primeFieldSpeed), 0, 1);
+      state.primeFieldSpeed = next;
+      if (primeSpeed) {
+        primeSpeed.value = String(next);
+      }
     }
 
-    if (Number.isFinite(settingsData.flowX) && flowX) {
-      state.moveBiasActionX = clamp(settingsData.flowX, -1, 1);
-      flowX.value = String(state.moveBiasActionX);
+    if (Number.isFinite(settingsData.primeFieldStrength)) {
+      const min = primeStrength ? Number(primeStrength.min || 0.1) : 0.1;
+      const max = primeStrength ? Number(primeStrength.max || 1.2) : 1.2;
+      const next = clamp(Number(settingsData.primeFieldStrength), min, max);
+      state.primeFieldStrength = next;
+      if (primeStrength) {
+        primeStrength.value = String(next);
+      }
     }
 
-    if (Number.isFinite(settingsData.flowY) && flowY) {
-      state.moveBiasActionY = clamp(settingsData.flowY, -1, 1);
-      flowY.value = String(state.moveBiasActionY);
+    if (Number.isFinite(settingsData.primeFieldSpread)) {
+      const min = primeSpread ? Number(primeSpread.min || 0.2) : 0.2;
+      const max = primeSpread ? Number(primeSpread.max || 0.7) : 0.7;
+      const next = clamp(Number(settingsData.primeFieldSpread), min, max);
+      state.primeFieldSpread = next;
+      if (primeSpread) {
+        primeSpread.value = String(next);
+      }
     }
 
-    if (Number.isFinite(settingsData.colorMode) && colorMode) {
-      state.colorModeType = clamp(
-        Math.round(settingsData.colorMode),
-        0,
-        settings.numberOfColorModes - 1
+    updatePrimeUi();
+
+    if (Number.isFinite(settingsData.weaponVolume)) {
+      const vol = clamp(settingsData.weaponVolume, 0, 1);
+      setMasterVolume(vol);
+      if (weaponVolume) {
+        weaponVolume.value = String(vol);
+      }
+      if (weaponVolumeValue) {
+        weaponVolumeValue.textContent = `${Math.round(vol * 100)}%`;
+      }
+    }
+
+    let updatedSelection = false;
+    if (Number.isFinite(settingsData.penIndex)) {
+      const penIndex = Math.round(
+        clamp(Number(settingsData.penIndex), 0, pointsManager.getNumberOfPoints() - 1)
       );
-      colorMode.value = String(state.colorModeType);
+      pointsManager.setSelectedIndex(0, penIndex);
+      updatedSelection = true;
+    }
+    if (Number.isFinite(settingsData.bgIndex)) {
+      const bgIndex = Math.round(
+        clamp(Number(settingsData.bgIndex), 0, pointsManager.getNumberOfPoints() - 1)
+      );
+      pointsManager.setSelectedIndex(1, bgIndex);
+      updatedSelection = true;
+    }
+    if (updatedSelection) {
+      syncPointSelectors();
+      updateAdvancedValues();
     }
 
-    if (typeof settingsData.showPen === "boolean" && showPen) {
-      state.displayPen = settingsData.showPen;
-      showPen.checked = state.displayPen;
+    if (typeof updateFlowControlHud === "function") {
+      updateFlowControlHud();
     }
 
-    if (Number.isFinite(settingsData.depositFactor) && depositFactor) {
-      settings.depositFactor = clamp(settingsData.depositFactor, 0, 1);
-      depositFactor.value = String(settings.depositFactor);
+    const params = new URLSearchParams(window.location.search);
+    let needsReload = false;
+    const currentQuality = quality ? quality.value : qualityKey;
+    if (typeof settingsData.quality === "string" && QUALITY_PRESETS[settingsData.quality]) {
+      if (settingsData.quality !== currentQuality) {
+        params.set("quality", settingsData.quality);
+        needsReload = true;
+      }
+    }
+    if (Number.isFinite(settingsData.particleDensity)) {
+      const density = clamp(Number(settingsData.particleDensity), 0.5, 5.0);
+      if (particleDensity) {
+        particleDensity.value = String(density);
+        updateParticleInfo();
+      }
+      params.set("density", String(density));
+      needsReload = true;
     }
 
-    if (Number.isFinite(settingsData.decayFactor) && decayFactor) {
-      settings.decayFactor = clamp(settingsData.decayFactor, 0, 1);
-      decayFactor.value = String(settings.decayFactor);
-    }
-
-    if (Number.isFinite(settingsData.blurPasses) && blurPasses) {
-      settings.blurPasses = Math.max(0, Math.round(settingsData.blurPasses));
-      blurPasses.value = String(settings.blurPasses);
-    }
-
-    if (Number.isFinite(settingsData.drawOpacity) && drawOpacity) {
-      settings.drawOpacity = clamp(settingsData.drawOpacity, 0, 1);
-      drawOpacity.value = String(settings.drawOpacity);
-    }
-
-    if (Number.isFinite(settingsData.fillOpacity) && fillOpacity) {
-      settings.fillOpacity = clamp(settingsData.fillOpacity, 0, 1);
-      fillOpacity.value = String(settings.fillOpacity);
-    }
-
-    if (Number.isFinite(settingsData.dotSize) && dotSize) {
-      settings.dotSize = clamp(settingsData.dotSize, 0, 50);
-      dotSize.value = String(settings.dotSize);
-    }
-
-    updateRenderValues();
-  };
-
-  const getPresetTargetIndex = () => {
-    if (presetApplyTarget) {
-      return Number(presetApplyTarget.value) || 0;
-    }
-    if (editTarget) {
-      return Number(editTarget.value) || 0;
-    }
-    return 0;
-  };
-
-  const applyRenderSettingsFromParams = (params, offset = 14) => {
-    if (!Array.isArray(params) || params.length < offset + 6) {
+    if (needsReload && !skipReload) {
+      try {
+        window.localStorage?.setItem("physarum:pendingSettings", JSON.stringify(settingsData));
+      } catch (error) {
+        console.warn("Failed to persist settings for reload", error);
+      }
+      flashStatus("Settings imported. Reloading...");
+      window.location.href = window.location.pathname + "?" + params.toString();
       return;
     }
-    applyPresetSettings({
-      depositFactor: params[offset],
-      decayFactor: params[offset + 1],
-      blurPasses: params[offset + 2],
-      drawOpacity: params[offset + 3],
-      fillOpacity: params[offset + 4],
-      dotSize: params[offset + 5],
+
+    if (!silent) {
+      flashStatus("Settings imported.");
+    }
+  };
+
+  if (exportSettings) {
+    exportSettings.addEventListener("click", () => {
+      downloadJson(buildSettingsExport(), `physarum_settings_${Date.now()}.json`);
+      flashStatus("Settings exported.");
     });
-  };
-
-  const resolvePresetScalingFactor = (payload) => {
-    const name = typeof payload?.name === "string" ? payload.name.trim().toLowerCase() : "";
-    if (name && PRESET_SCALING_BY_NAME.has(name)) {
-      return PRESET_SCALING_BY_NAME.get(name);
-    }
-    return null;
-  };
-
-  const parsePresetPayload = (payload) => {
-    const params = payload?.parameters;
-    if (!Array.isArray(params) || params.length < 14) {
-      return null;
-    }
-    const renderOffset = params.length >= 21 ? 15 : 14;
-    const coreParams = params.slice(0, 14);
-    const explicitScaling =
-      params.length >= 21 && Number.isFinite(params[14]) ? Number(params[14]) : null;
-    const scalingFactor = Number.isFinite(explicitScaling)
-      ? explicitScaling
-      : resolvePresetScalingFactor(payload);
-    return { params, coreParams, renderOffset, scalingFactor };
-  };
-
-  const applySinglePreset = (payload, targetIndex) => {
-    const parsed = parsePresetPayload(payload);
-    if (!parsed) {
-      flashStatus("Preset parameters missing or invalid.");
-      return false;
-    }
-
-    const applyTargets = targetIndex === 2 ? [0, 1] : [targetIndex];
-    const applied = applyTargets.every((slot) =>
-      pointsManager.applyPointPreset(slot, parsed.coreParams, parsed.scalingFactor)
-    );
-    if (!applied) {
-      flashStatus("Preset parameters could not be applied.");
-      return false;
-    }
-
-    applyRenderSettingsFromParams(parsed.params, parsed.renderOffset);
-    updateAdvancedValues();
-    state.transitionTriggerTime = state.time;
-    const targetLabel =
-      targetIndex === 2 ? "Pen + Background" : targetIndex === 0 ? "Pen" : "Background";
-    flashStatus(`Preset applied to ${targetLabel}.`);
-    return true;
-  };
-
-  function setParamValue(index, value) {
-    const control = paramControls[index];
-    const min = Number(control.range.min);
-    const max = Number(control.range.max);
-    const clamped = clamp(value, min, max);
-    pointsManager.setValue(index, clamped);
-    control.range.value = String(clamped);
-    control.number.value = clamped.toFixed(3);
   }
 
-  function updateAdvancedValues() {
-    const targetIndex = Number(editTarget.value);
-    pointsManager.setCurrentSelectionIndex(targetIndex);
-    const pointIndex = pointsManager.selectedIndices[targetIndex];
-    const targetLabel = targetIndex === 0 ? "Pen" : "Background";
-    editPointLabel.textContent = `Editing ${targetLabel}: ${pointsManager.getPointName(pointIndex)}`;
+  if (importSettings && settingsFile) {
+    importSettings.addEventListener("click", () => {
+      settingsFile.value = "";
+      settingsFile.click();
+    });
 
-    for (let i = 0; i < paramControls.length; i += 1) {
-      const value = pointsManager.getValue(i);
-      paramControls[i].range.value = String(value);
-      paramControls[i].number.value = value.toFixed(3);
+    settingsFile.addEventListener("change", async () => {
+      const file = settingsFile.files && settingsFile.files[0];
+      if (!file) {
+        return;
+      }
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const payload =
+          parsed && typeof parsed === "object"
+            ? parsed
+            : null;
+        const settingsData = payload?.settings || payload;
+        applySettingsImport(settingsData);
+      } catch (error) {
+        console.error(error);
+        flashStatus("Invalid settings JSON.");
+      }
+    });
+  }
+
+  try {
+    const pendingRaw = window.localStorage?.getItem("physarum:pendingSettings");
+    if (pendingRaw) {
+      window.localStorage?.removeItem("physarum:pendingSettings");
+      const pendingSettings = JSON.parse(pendingRaw);
+      applySettingsImport(pendingSettings, { skipReload: true, silent: true });
+      flashStatus("Settings restored after reload.");
     }
+  } catch (error) {
+    console.warn("Failed to restore pending settings", error);
   }
 
   // Weapon cooldown tracking
@@ -779,6 +1028,7 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       triggerWeaponCooldown(0);
       playWeaponSound(0, getCurrentPointValues(), state.currentActionAreaSizeSigma);
       incrementShots();
+      applySimpleTowerDamage(0);
       return true;
     },
     () => {
@@ -787,6 +1037,7 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       triggerWeaponCooldown(1);
       playWeaponSound(1, getCurrentPointValues(), state.currentActionAreaSizeSigma);
       incrementShots();
+      applySimpleTowerDamage(1);
       return true;
     },
     () => {
@@ -795,6 +1046,7 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       triggerWeaponCooldown(2);
       playWeaponSound(2, getCurrentPointValues(), state.currentActionAreaSizeSigma);
       incrementShots();
+      applySimpleTowerDamage(2);
       return true;
     },
     () => {
@@ -805,6 +1057,7 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       triggerWeaponCooldown(3);
       playWeaponSound(3, getCurrentPointValues(), state.currentActionAreaSizeSigma);
       incrementShots();
+      applySimpleTowerDamage(3);
       return true;
     },
     () => {
@@ -815,6 +1068,7 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       triggerWeaponCooldown(4);
       playWeaponSound(4, getCurrentPointValues(), state.currentActionAreaSizeSigma);
       incrementShots();
+      applySimpleTowerDamage(4);
       return true;
     },
   ];
@@ -836,6 +1090,9 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   };
 
   const runNextLevel = () => {
+    if (isSimpleMode()) {
+      return;
+    }
     currentLevel++;
     updateGameHUD();
     pointsManager.createRandomParameters();
@@ -868,8 +1125,13 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     WEAPON_MODES.forEach((mode, index) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "weapon";
-      button.innerHTML = `<span class="weapon__key">${mode.key}</span><span class="weapon__label">${mode.label}</span>`;
+      button.className = `weapon weapon--${mode.id}`;
+      button.innerHTML = `
+        <span class="weapon__preview" aria-hidden="true">
+          <span class="weapon__key">${mode.key}</span>
+        </span>
+        <span class="weapon__label">${mode.label}</span>
+      `;
       button.addEventListener("click", () => {
         setWeaponIndex(index);
         // Fire the weapon on click
@@ -916,64 +1178,6 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   }
 
   updateSoundUi();
-
-  function buildParamControls() {
-    paramList.innerHTML = "";
-    paramControls.length = 0;
-
-    for (let i = 0; i < PARAMS_DIMENSION; i += 1) {
-      const row = document.createElement("div");
-      row.className = "param-row";
-
-      const label = document.createElement("label");
-      label.textContent = pointsManager.getSettingName(i);
-
-      const controls = document.createElement("div");
-      controls.className = "param-controls";
-
-      const range = document.createElement("input");
-      range.type = "range";
-      const number = document.createElement("input");
-      number.type = "number";
-
-      const { min, max, step } = pointsManager.getParamRange(i);
-      range.min = String(min);
-      range.max = String(max);
-      range.step = String(step);
-      number.min = String(min);
-      number.max = String(max);
-      number.step = String(step);
-
-      range.addEventListener("input", () => {
-        setParamValue(i, Number(range.value));
-      });
-      number.addEventListener("input", () => {
-        setParamValue(i, Number(number.value));
-      });
-
-      controls.append(range, number);
-      row.append(label, controls);
-      paramList.appendChild(row);
-
-      paramControls.push({ range, number });
-    }
-
-    updateAdvancedValues();
-  }
-
-  editTarget.addEventListener("change", () => {
-    updateAdvancedValues();
-  });
-
-  resetCurrent.addEventListener("click", () => {
-    pointsManager.resetCurrentPoint();
-    updateAdvancedValues();
-  });
-
-  resetAll.addEventListener("click", () => {
-    pointsManager.resetAllPoints();
-    updateAdvancedValues();
-  });
 
   if (randomParams) {
     randomParams.addEventListener("click", () => {
@@ -1027,175 +1231,6 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     });
   }
 
-  if (exportPreset) {
-    exportPreset.addEventListener("click", () => {
-      downloadJson(buildPresetExport(), `physarum_preset_${Date.now()}.json`);
-      flashStatus("Preset exported.");
-    });
-  }
-
-  if (importPreset && presetFile) {
-    importPreset.addEventListener("click", () => {
-      presetFile.value = "";
-      presetFile.click();
-    });
-
-    presetFile.addEventListener("change", async () => {
-      const file = presetFile.files && presetFile.files[0];
-      if (!file) {
-        return;
-      }
-
-      try {
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-        const payload =
-          Array.isArray(parsed)
-            ? { points: parsed }
-            : parsed && typeof parsed === "object"
-              ? parsed
-              : null;
-
-        if (payload?.parameters) {
-          applySinglePreset(payload, getPresetTargetIndex());
-          return;
-        }
-
-        const pointsData =
-          payload?.points ||
-          payload?.pointsData ||
-          payload?.currentPointsData ||
-          payload?.parameters;
-
-        if (!Array.isArray(pointsData)) {
-          flashStatus("Preset JSON missing point data.");
-          return;
-        }
-
-        if (!pointsManager.loadPointsData(pointsData)) {
-          flashStatus("Preset point data does not match expected size.");
-          return;
-        }
-
-        if (Array.isArray(payload?.selectedIndices) && payload.selectedIndices.length >= 2) {
-          const penIndex = Math.round(
-            clamp(Number(payload.selectedIndices[0]), 0, pointsManager.getNumberOfPoints() - 1)
-          );
-          const bgIndex = Math.round(
-            clamp(Number(payload.selectedIndices[1]), 0, pointsManager.getNumberOfPoints() - 1)
-          );
-          pointsManager.setSelectedIndex(0, penIndex);
-          pointsManager.setSelectedIndex(1, bgIndex);
-        }
-
-        buildParamControls();
-        syncPointSelectors();
-        applyPresetSettings(payload?.settings);
-        updateFlowControlHud();
-        state.transitionTriggerTime = state.time;
-        flashStatus("Preset imported.");
-      } catch (error) {
-        console.error(error);
-        flashStatus("Invalid preset JSON.");
-      }
-    });
-  }
-
-  const formatPresetLabel = (entry) => {
-    if (entry?.label) {
-      return entry.label;
-    }
-    if (entry?.name && entry?.exported) {
-      return `${entry.name} (${entry.exported.slice(0, 10)})`;
-    }
-    return entry?.name || entry?.file || "Preset";
-  };
-
-  const updatePresetInfo = (entry) => {
-    if (!presetInfo) {
-      return;
-    }
-    if (!entry) {
-      presetInfo.textContent = "No preset selected.";
-      return;
-    }
-    const parts = [entry.name || entry.file];
-    if (entry.exported) {
-      parts.push(entry.exported);
-    }
-    presetInfo.textContent = parts.filter(Boolean).join(" • ");
-  };
-
-  const loadPresetLibrary = async () => {
-    if (!presetLibrary) {
-      return;
-    }
-    presetLibrary.innerHTML = "";
-    presetLibraryEntries = [];
-    if (presetInfo) {
-      presetInfo.textContent = "Loading presets...";
-    }
-    try {
-      const response = await fetch("./36points-exports/index.json", { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`Preset index ${response.status}`);
-      }
-      const data = await response.json();
-      const entries = Array.isArray(data?.presets) ? data.presets : [];
-      presetLibraryEntries = entries;
-      entries.forEach((entry, index) => {
-        const option = document.createElement("option");
-        option.value = entry.file || String(index);
-        option.textContent = formatPresetLabel(entry);
-        presetLibrary.appendChild(option);
-      });
-      updatePresetInfo(entries[0]);
-    } catch (error) {
-      console.warn("Failed to load preset library", error);
-      if (presetInfo) {
-        presetInfo.textContent = "Preset library unavailable.";
-      }
-    }
-  };
-
-  const applyPresetLibrarySelection = async () => {
-    if (!presetLibrary || presetLibraryEntries.length === 0) {
-      flashStatus("Preset library is empty.");
-      return;
-    }
-    const index = Math.max(0, presetLibrary.selectedIndex);
-    const entry = presetLibraryEntries[index];
-    if (!entry?.file) {
-      flashStatus("Preset file missing.");
-      return;
-    }
-    try {
-      const response = await fetch(`./36points-exports/${entry.file}`);
-      if (!response.ok) {
-        throw new Error(`Preset ${response.status}`);
-      }
-      const payload = await response.json();
-      applySinglePreset(payload, getPresetTargetIndex());
-      updatePresetInfo(entry);
-    } catch (error) {
-      console.error(error);
-      flashStatus("Failed to load preset.");
-    }
-  };
-
-  if (presetLibrary) {
-    presetLibrary.addEventListener("change", () => {
-      updatePresetInfo(presetLibraryEntries[presetLibrary.selectedIndex]);
-    });
-    loadPresetLibrary();
-  }
-
-  if (applyPresetBtn) {
-    applyPresetBtn.addEventListener("click", () => {
-      applyPresetLibrarySelection();
-    });
-  }
-
   const editableTags = new Set(["INPUT", "SELECT", "TEXTAREA", "BUTTON"]);
   const isEditableTarget = (target) =>
     target && (editableTags.has(target.tagName) || target.isContentEditable);
@@ -1206,7 +1241,7 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     const next = clamp(state.targetActionAreaSizeSigma + delta, min, max);
     state.targetActionAreaSizeSigma = next;
     state.latestSigmaChangeTime = state.time;
-    penSize.value = String(next);
+    syncPenSizeInputs(next);
   };
 
   const moveActionBy = (dx, dy) => {
@@ -1221,28 +1256,32 @@ export function initControls(state, pointsManager, settings, qualityKey) {
   const heldKeys = new Set();
   const flowControlHud = document.getElementById("flowControlHud");
   
-  const updateFlowControlHud = () => {
-    if (!flowControlHud) return;
+  function updateFlowControlHud() {
+    if (!flowControlHud) {
+      return;
+    }
     const flowXVal = state.moveBiasActionX || 0;
     const flowYVal = state.moveBiasActionY || 0;
     const inertiaVal = state.L2Action ?? 0;
-    flowControlHud.innerHTML = `
-      <div class="flow-indicator">
-        <span class="flow-label">FLOW</span>
-        <span class="flow-value ${flowXVal !== 0 || flowYVal !== 0 ? 'active' : ''}">
-          X: ${flowXVal > 0 ? '+' : ''}${flowXVal.toFixed(2)} | Y: ${flowYVal > 0 ? '+' : ''}${flowYVal.toFixed(2)}
-        </span>
-      </div>
-      <div class="flow-indicator">
-        <span class="flow-label">INERTIA</span>
-        <span class="flow-value ${inertiaVal !== 0 ? 'active' : ''}">${inertiaVal.toFixed(2)}</span>
-      </div>
-    `;
-  };
-  
-  // Base L2Action (inertia) to return to when key released  
-  let baseL2Action = state.L2Action ?? 0;
-  
+    if (flowValue) {
+      flowValue.textContent = `X: ${flowXVal > 0 ? "+" : ""}${flowXVal.toFixed(2)} | Y: ${flowYVal > 0 ? "+" : ""}${flowYVal.toFixed(2)}`;
+      flowValue.classList.toggle("active", flowXVal !== 0 || flowYVal !== 0);
+    }
+    if (inertiaValue) {
+      inertiaValue.textContent = inertiaVal.toFixed(2);
+      inertiaValue.classList.toggle("active", inertiaVal !== 0);
+    }
+    if (flowXMobile) {
+      flowXMobile.value = String(flowXVal);
+    }
+    if (flowYMobile) {
+      flowYMobile.value = String(flowYVal);
+    }
+    if (inertiaMobile) {
+      inertiaMobile.value = String(inertiaVal);
+    }
+  }
+
   const applyHeldKeys = () => {
     // Flow X: A = left (-), D = right (+)
     if (heldKeys.has("a")) {
@@ -1281,6 +1320,9 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     if (flowX) flowX.value = String(state.moveBiasActionX);
     if (flowY) flowY.value = String(state.moveBiasActionY);
     if (inertia) inertia.value = String(state.L2Action);
+    if (flowXMobile) flowXMobile.value = String(state.moveBiasActionX);
+    if (flowYMobile) flowYMobile.value = String(state.moveBiasActionY);
+    if (inertiaMobile) inertiaMobile.value = String(state.L2Action);
     
     updateFlowControlHud();
   };
@@ -1338,6 +1380,9 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       }
       case "6":
         // Key 6 = Toggle tower placement mode
+        if (!document.body.classList.contains("view-expert")) {
+          break;
+        }
         if (state.towers.length < state.maxTowers) {
           state.towerPlacementMode = !state.towerPlacementMode;
           if (placeTowerBtn) {
@@ -1360,7 +1405,11 @@ export function initControls(state, pointsManager, settings, qualityKey) {
       case " ":
       case "enter":
         // Space or Enter = Next Level
-        runNextLevel();
+        if (!isSimpleMode()) {
+          runNextLevel();
+        } else {
+          handled = false;
+        }
         break;
       case "p":
         state.displayPen = !state.displayPen;
@@ -1426,216 +1475,77 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     annihilatorStatus.textContent = state.soundEnabled ? "ON" : "OFF";
   }
 
-  // ============================================
-  // TOWER SYSTEM
-  // ============================================
-  
-  // Update tower list UI
-  const updateTowerUI = () => {
-    if (towerCountEl) {
-      towerCountEl.textContent = `${state.towers.length}/${state.maxTowers}`;
-    }
+  initTowerControls(state);
 
-    if (towerListEl) {
-      towerListEl.innerHTML = "";
-      state.towers.forEach((tower, index) => {
-        const item = document.createElement("div");
-        item.className = `tower-item${state.selectedTowerIndex === index ? " tower-item--selected" : ""}`;
-        item.innerHTML = `
-          <span class="tower-item__num">#${index + 1}</span>
-          <span class="tower-item__info">${Math.round(tower.frequency)}Hz, ${(tower.strength * 100).toFixed(0)}%</span>
-          <button class="tower-item__delete" data-index="${index}">×</button>
-        `;
-        item.addEventListener("click", (e) => {
-          if (!e.target.classList.contains("tower-item__delete")) {
-            state.selectedTowerIndex = state.selectedTowerIndex === index ? -1 : index;
-            updateTowerUI();
-          }
-        });
-        towerListEl.appendChild(item);
-      });
+  const isMobileLayout = () =>
+    window.matchMedia && window.matchMedia("(max-width: 900px), (max-height: 700px)").matches;
 
-      // Delete button handlers
-      towerListEl.querySelectorAll(".tower-item__delete").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const idx = parseInt(btn.dataset.index);
-          state.towers.splice(idx, 1);
-          if (state.selectedTowerIndex >= state.towers.length) {
-            state.selectedTowerIndex = state.towers.length - 1;
-          }
-          updateTowerUI();
-        });
-      });
+  const updateMobileToggleState = () => {
+    const showTowers = document.body.classList.contains("mobile-show-towers");
+    const showSettings = document.body.classList.contains("mobile-show-settings");
+    if (mobileToggleTowers) {
+      mobileToggleTowers.setAttribute("aria-pressed", String(showTowers));
     }
-    
-    // Show/hide edit section based on selection
-    const hasSelection = state.selectedTowerIndex >= 0 && state.selectedTowerIndex < state.towers.length;
-    
-    if (newTowerSection) {
-      newTowerSection.classList.toggle("hidden", hasSelection);
-    }
-    if (editTowerSection) {
-      editTowerSection.classList.toggle("hidden", !hasSelection);
-      
-      if (hasSelection) {
-        const tower = state.towers[state.selectedTowerIndex];
-        if (editTowerNum) editTowerNum.textContent = String(state.selectedTowerIndex + 1);
-        if (editTowerRadius) {
-          editTowerRadius.value = String(tower.radius);
-          if (editTowerRadiusValue) editTowerRadiusValue.textContent = tower.radius.toFixed(2);
-        }
-        if (editTowerFreq) {
-          editTowerFreq.value = String(tower.frequency);
-          if (editTowerFreqValue) editTowerFreqValue.textContent = `${Math.round(tower.frequency)} Hz`;
-        }
-        if (editTowerStrength) {
-          editTowerStrength.value = String(tower.strength);
-          if (editTowerStrengthValue) editTowerStrengthValue.textContent = tower.strength.toFixed(2);
-        }
-        if (editTowerPattern) {
-          editTowerPattern.value = String(tower.pattern);
-        }
-      }
+    if (mobileToggleSettings) {
+      mobileToggleSettings.setAttribute("aria-pressed", String(showSettings));
     }
   };
-  
-  
-  // Place tower at current cursor position
-  const placeTower = () => {
-    if (state.towers.length >= state.maxTowers) {
+
+  const closeMobilePanels = () => {
+    document.body.classList.remove("mobile-show-towers", "mobile-show-settings", "mobile-panel-open");
+    updateMobileToggleState();
+  };
+
+  const openMobilePanel = (panel) => {
+    if (!isMobileLayout()) {
       return;
     }
-    
-    const tower = {
-      x: state.actionX,
-      y: state.actionY,
-      radius: newTowerRadius ? parseFloat(newTowerRadius.value) : TOWER_SETTINGS.defaultRadius,
-      frequency: newTowerFreq ? parseFloat(newTowerFreq.value) : TOWER_SETTINGS.defaultFrequency,
-      strength: newTowerStrength ? parseFloat(newTowerStrength.value) : TOWER_SETTINGS.defaultStrength,
-      pattern: newTowerPattern ? parseInt(newTowerPattern.value) : TOWER_SETTINGS.defaultPattern,
-    };
-    
-    state.towers.push(tower);
-    state.selectedTowerIndex = state.towers.length - 1;
-    state.towerPlacementMode = false;
-    
-    if (placeTowerBtn) {
-      placeTowerBtn.classList.remove("tower-panel__place-btn--active");
+    document.body.classList.remove("mobile-show-towers", "mobile-show-settings");
+    if (panel === "towers") {
+      document.body.classList.add("mobile-show-towers");
+    } else if (panel === "settings") {
+      document.body.classList.add("mobile-show-settings");
     }
-    
-    updateTowerUI();
-    
+    document.body.classList.add("mobile-panel-open");
+    updateMobileToggleState();
   };
-  
-  // Tower placement mode toggle
-  if (placeTowerBtn) {
-    placeTowerBtn.addEventListener("click", () => {
-      if (state.towers.length >= state.maxTowers) {
-        return;
+
+  if (mobileToggleTowers) {
+    mobileToggleTowers.addEventListener("click", () => {
+      const isOpen = document.body.classList.contains("mobile-show-towers");
+      if (isOpen) {
+        closeMobilePanels();
+      } else {
+        openMobilePanel("towers");
       }
-      state.towerPlacementMode = !state.towerPlacementMode;
-      placeTowerBtn.classList.toggle("tower-panel__place-btn--active", state.towerPlacementMode);
-    });
-  }
-  
-  // Clear all towers
-  if (clearTowersBtn) {
-    clearTowersBtn.addEventListener("click", () => {
-      state.towers = [];
-      state.selectedTowerIndex = -1;
-      updateTowerUI();
-      
-    });
-  }
-  
-  // Tower settings inputs
-  if (newTowerRadius) {
-    newTowerRadius.addEventListener("input", () => {
-      if (newTowerRadiusValue) {
-        newTowerRadiusValue.textContent = parseFloat(newTowerRadius.value).toFixed(2);
-      }
-    });
-  }
-  if (newTowerFreq) {
-    newTowerFreq.addEventListener("input", () => {
-      if (newTowerFreqValue) {
-        newTowerFreqValue.textContent = `${newTowerFreq.value} Hz`;
-      }
-    });
-  }
-  if (newTowerStrength) {
-    newTowerStrength.addEventListener("input", () => {
-      if (newTowerStrengthValue) {
-        newTowerStrengthValue.textContent = parseFloat(newTowerStrength.value).toFixed(2);
-      }
-    });
-  }
-  
-  // Populate pattern dropdowns
-  const populatePatternDropdown = (selectEl, defaultValue) => {
-    if (!selectEl) return;
-    selectEl.innerHTML = "";
-    SOUND_WAVE_MODES.forEach(mode => {
-      const opt = document.createElement("option");
-      opt.value = String(mode.id);
-      opt.textContent = mode.label;
-      selectEl.appendChild(opt);
-    });
-    selectEl.value = String(defaultValue);
-  };
-  
-  populatePatternDropdown(newTowerPattern, TOWER_SETTINGS.defaultPattern);
-  populatePatternDropdown(editTowerPattern, TOWER_SETTINGS.defaultPattern);
-  
-  // Edit tower input handlers
-  const updateSelectedTower = (property, value) => {
-    if (state.selectedTowerIndex >= 0 && state.selectedTowerIndex < state.towers.length) {
-      state.towers[state.selectedTowerIndex][property] = value;
-      updateTowerUI();
-    }
-  };
-  
-  if (editTowerRadius) {
-    editTowerRadius.addEventListener("input", () => {
-      const val = parseFloat(editTowerRadius.value);
-      if (editTowerRadiusValue) editTowerRadiusValue.textContent = val.toFixed(2);
-      updateSelectedTower("radius", val);
-    });
-  }
-  if (editTowerFreq) {
-    editTowerFreq.addEventListener("input", () => {
-      const val = parseFloat(editTowerFreq.value);
-      if (editTowerFreqValue) editTowerFreqValue.textContent = `${Math.round(val)} Hz`;
-      updateSelectedTower("frequency", val);
-    });
-  }
-  if (editTowerStrength) {
-    editTowerStrength.addEventListener("input", () => {
-      const val = parseFloat(editTowerStrength.value);
-      if (editTowerStrengthValue) editTowerStrengthValue.textContent = val.toFixed(2);
-      updateSelectedTower("strength", val);
-    });
-  }
-  if (editTowerPattern) {
-    editTowerPattern.addEventListener("change", () => {
-      updateSelectedTower("pattern", parseInt(editTowerPattern.value));
     });
   }
 
-  // Handle click on canvas for tower placement
-  const canvas = state.canvas;
-  canvas.addEventListener("click", (e) => {
-    if (state.towerPlacementMode) {
-      placeTower();
+  if (mobileToggleSettings) {
+    mobileToggleSettings.addEventListener("click", () => {
+      const isOpen = document.body.classList.contains("mobile-show-settings");
+      if (isOpen) {
+        closeMobilePanels();
+      } else {
+        openMobilePanel("settings");
+      }
+    });
+  }
+
+  if (mobileBackdrop) {
+    mobileBackdrop.addEventListener("click", () => {
+      closeMobilePanels();
+    });
+  }
+
+  updateMobileToggleState();
+
+  window.addEventListener("resize", () => {
+    if (!isMobileLayout()) {
+      closeMobilePanels();
     }
   });
-  
-  // Initialize tower UI
-  updateTowerUI();
 
   // Initialize game HUD
   updateGameHUD();
-
-  buildParamControls();
 }

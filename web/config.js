@@ -23,7 +23,11 @@ export const BASE_SETTINGS = {
   soundFrequency: 440,
   soundStrength: 0.65,
   soundWaveMode: 1,
-  weaponSoundVolume: 0.5,
+  weaponSoundVolume: 1.0,
+  primeFieldEnabled: false,
+  primeFieldSpeed: 0.35,
+  primeFieldStrength: 0.6,
+  primeFieldSpread: 0.45,
 };
 
 export const QUALITY_PRESETS = {
@@ -50,7 +54,18 @@ export function resolveSettingsFromUrl() {
       settings.particleDensity = density;
     }
   }
-  
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  if (Number.isFinite(viewportWidth) && Number.isFinite(viewportHeight) && viewportWidth > 0 && viewportHeight > 0) {
+    const aspect = viewportWidth / viewportHeight;
+    const basePixels = settings.simWidth * settings.simHeight;
+    const targetHeight = Math.max(180, Math.round(Math.sqrt(basePixels / aspect)));
+    const targetWidth = Math.max(320, Math.round(targetHeight * aspect));
+    settings.simWidth = targetWidth;
+    settings.simHeight = targetHeight;
+  }
+
   const debugDefaultEnabled = urlParams.get("debug") === "1";
   return { settings, qualityKey, debugDefaultEnabled };
 }
@@ -146,10 +161,11 @@ export const SOUND_WAVE_MODES = [
 // Sound Wave Towers system
 export const TOWER_SETTINGS = {
   maxTowers: 8,
-  defaultRadius: 0.15,      // 15% of screen size
+  defaultRadius: 0.5,       // 50% of screen size
   minRadius: 0.05,
   maxRadius: 0.5,
-  defaultFrequency: 440,
-  defaultStrength: 0.7,
+  defaultFrequency: 250,
+  defaultStrength: 0.2,
   defaultPattern: 1,        // Cymatics Rings
+  defaultHealth: 100,
 };

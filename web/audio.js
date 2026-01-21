@@ -4,7 +4,27 @@
 let audioCtx = null;
 let masterGain = null;
 let compressor = null;
+let weaponGain = null;
 let currentVolume = 0.5;
+const WEAPON_GAIN_SCALE = 0.3;
+const WEAPON_PITCH_SCALE = 0.6;
+const WEAPON_FILTER_SCALE = 0.7;
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const getWeaponParamsFromPoint = (pointValues) => {
+  const params = getParamsFromPoint(pointValues);
+  return {
+    ...params,
+    baseFreq: clamp(params.baseFreq * WEAPON_PITCH_SCALE, 60, 800),
+    filterFreq: clamp(params.filterFreq * WEAPON_FILTER_SCALE, 120, 2400),
+  };
+};
+
+const getWeaponGain = () => {
+  ensureAudioContext();
+  return weaponGain || masterGain;
+};
 
 export function ensureAudioContext() {
   if (!audioCtx) {
@@ -12,8 +32,13 @@ export function ensureAudioContext() {
     
     // Master gain for overall volume
     masterGain = audioCtx.createGain();
-    masterGain.gain.value = currentVolume * 0.6;
+    masterGain.gain.value = currentVolume;
     
+    // Weapon gain to keep pen sounds lower
+    weaponGain = audioCtx.createGain();
+    weaponGain.gain.value = WEAPON_GAIN_SCALE;
+    weaponGain.connect(masterGain);
+
     // Compressor to prevent clipping
     compressor = audioCtx.createDynamicsCompressor();
     compressor.threshold.value = -24;
@@ -33,10 +58,19 @@ export function ensureAudioContext() {
   return audioCtx;
 }
 
+export function getAudioContext() {
+  return ensureAudioContext();
+}
+
+export function getMasterGain() {
+  ensureAudioContext();
+  return masterGain;
+}
+
 export function setMasterVolume(volume) {
   currentVolume = Math.max(0, Math.min(1, volume));
   if (masterGain && audioCtx) {
-    masterGain.gain.setTargetAtTime(currentVolume * 0.6, audioCtx.currentTime, 0.05);
+    masterGain.gain.setTargetAtTime(currentVolume, audioCtx.currentTime, 0.05);
   }
 }
 
@@ -104,7 +138,7 @@ function getParamsFromPoint(pointValues) {
 // Nova Burst - explosive scatter sound
 export function playNovaBurst(pointValues, penSize) {
   const ctx = ensureAudioContext();
-  const params = getParamsFromPoint(pointValues);
+  const params = getWeaponParamsFromPoint(pointValues);
   const now = ctx.currentTime;
   
   // Size affects pitch and duration
@@ -154,13 +188,14 @@ export function playNovaBurst(pointValues, penSize) {
   oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25 * sizeMultiplier);
   
   // Connect
+  const weaponOut = getWeaponGain();
   noise.connect(noiseFilter);
   noiseFilter.connect(noiseGain);
-  noiseGain.connect(masterGain);
+  noiseGain.connect(weaponOut);
   
   osc1.connect(oscGain);
   osc2.connect(oscGain);
-  oscGain.connect(masterGain);
+  oscGain.connect(weaponOut);
   
   // Play
   noise.start(now);
@@ -175,7 +210,7 @@ export function playNovaBurst(pointValues, penSize) {
 // Halo Ring - ethereal ring/chime sound
 export function playHaloRing(pointValues, penSize) {
   const ctx = ensureAudioContext();
-  const params = getParamsFromPoint(pointValues);
+  const params = getWeaponParamsFromPoint(pointValues);
   const now = ctx.currentTime;
   
   const sizeMultiplier = 0.7 + penSize * 0.8;
@@ -203,7 +238,7 @@ export function playHaloRing(pointValues, penSize) {
     
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(masterGain);
+    gain.connect(getWeaponGain());
     
     osc.start(now);
     osc.stop(now + duration + 0.1);
@@ -213,7 +248,7 @@ export function playHaloRing(pointValues, penSize) {
 // Void Wave - deep pulsing wave sound
 export function playVoidWave(pointValues, penSize) {
   const ctx = ensureAudioContext();
-  const params = getParamsFromPoint(pointValues);
+  const params = getWeaponParamsFromPoint(pointValues);
   const now = ctx.currentTime;
   
   const sizeMultiplier = 0.8 + penSize * 1.2;
@@ -264,12 +299,13 @@ export function playVoidWave(pointValues, penSize) {
   mainGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
   
   // Connect
+  const weaponOut = getWeaponGain();
   sub.connect(subGain);
-  subGain.connect(masterGain);
+  subGain.connect(weaponOut);
   
   carrier.connect(filter);
   filter.connect(mainGain);
-  mainGain.connect(masterGain);
+  mainGain.connect(weaponOut);
   
   // Play
   sub.start(now);
@@ -284,7 +320,7 @@ export function playVoidWave(pointValues, penSize) {
 // Chaos Vortex - swirling chaotic sound
 export function playChaosVortex(pointValues, penSize) {
   const ctx = ensureAudioContext();
-  const params = getParamsFromPoint(pointValues);
+  const params = getWeaponParamsFromPoint(pointValues);
   const now = ctx.currentTime;
   
   const sizeMultiplier = 0.6 + penSize * 1.4;
@@ -334,7 +370,7 @@ export function playChaosVortex(pointValues, penSize) {
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(panner);
-    panner.connect(masterGain);
+    panner.connect(getWeaponGain());
     
     osc.start(now + startDelay);
     lfo.start(now + startDelay);
@@ -349,7 +385,7 @@ export function playChaosVortex(pointValues, penSize) {
 // Mold Pulse - concentrated impact sound
 export function playMoldPulse(pointValues, penSize) {
   const ctx = ensureAudioContext();
-  const params = getParamsFromPoint(pointValues);
+  const params = getWeaponParamsFromPoint(pointValues);
   const now = ctx.currentTime;
   
   const sizeMultiplier = 0.5 + penSize;
@@ -389,12 +425,12 @@ export function playMoldPulse(pointValues, penSize) {
   clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
   
   click.connect(clickGain);
-  clickGain.connect(masterGain);
+  clickGain.connect(getWeaponGain());
   
   osc.connect(distortion);
   distortion.connect(filter);
   filter.connect(gain);
-  gain.connect(masterGain);
+  gain.connect(getWeaponGain());
   
   osc.start(now);
   click.start(now);
@@ -544,7 +580,7 @@ export function playWeaponSelect(weaponIndex) {
   
   // Different pitch for each weapon slot
   const pitches = [220, 277, 330, 392, 440];
-  const freq = pitches[weaponIndex % pitches.length];
+  const freq = pitches[weaponIndex % pitches.length] * WEAPON_PITCH_SCALE;
   
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -557,7 +593,7 @@ export function playWeaponSelect(weaponIndex) {
   gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
   
   osc.connect(gain);
-  gain.connect(masterGain);
+  gain.connect(getWeaponGain());
   
   osc.start(now);
   osc.stop(now + 0.1);

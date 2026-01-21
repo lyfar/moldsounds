@@ -153,6 +153,9 @@ fn calcSoundPattern(
   let baseK = 3.0 + freqNorm * 12.0;
   let timePhase = time * (0.5 + freqNorm * 2.0);
   
+  // Apply aspect ratio correction to Y to maintain circular patterns on screen
+  // On portrait screens (aspectRatio > 1), multiply localY by aspectRatio
+  // so that equal pixel distances produce equal pattern coordinates
   let cx = localX;
   let cy = localY * aspectRatio;
   let r = sqrt(cx * cx + cy * cy);
@@ -162,7 +165,7 @@ fn calcSoundPattern(
   let m = 2.0 + floor(freqNorm * 6.0);
   let n = 3.0 + floor(freqNorm * 5.0);
   let chX = cx + 0.5;
-  let chY = cy / aspectRatio + 0.5;
+  let chY = cy + 0.5;
   let ch1 = sin(m * PI * chX) * sin(n * PI * chY);
   let ch2 = sin(n * PI * chX) * sin(m * PI * chY);
   let chladni = (ch1 + ch2) * cos(timePhase * 0.5);
@@ -407,7 +410,11 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         let towerCenterY = tower.y / height;
         let dx = normalizedPosition.x - towerCenterX;
         let dy = normalizedPosition.y - towerCenterY;
-        let dist = sqrt(dx * dx + dy * dy);
+        // Apply aspect ratio correction to Y to make circles appear round on screen
+        // On portrait screens (aspectRatio > 1), multiply dy by aspectRatio so that
+        // equal pixel distances produce equal normalized distances
+        let dyAspect = dy * aspectRatio;
+        let dist = sqrt(dx * dx + dyAspect * dyAspect);
         
         // Tower radius in normalized coordinates
         let radiusNorm = tower.radius;

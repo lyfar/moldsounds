@@ -1,6 +1,6 @@
 import { createShaders } from "./shaders.js";
 import { initWebGPU, configureCanvas } from "./gpu.js";
-import { PARAMS_DIMENSION } from "./config.js";
+import { PARAMS_DIMENSION, SOUND_WAVE_MODES } from "./config.js";
 import {
   buildUniforms,
   writePointSettings,
@@ -12,6 +12,47 @@ import {
   writeZeroTexture,
   clamp,
 } from "./utils.js";
+
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+const PRIME_LOG_RANGE = Math.log(10000);
+const PRIME_CACHE = [2, 3];
+const SOUND_PATTERN_COUNT = SOUND_WAVE_MODES.length;
+
+const isPrime = (value) => {
+  if (value <= 1) {
+    return false;
+  }
+  if (value % 2 === 0) {
+    return value === 2;
+  }
+  const limit = Math.floor(Math.sqrt(value));
+  for (let i = 3; i <= limit; i += 2) {
+    if (value % i === 0) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const getPrime = (index) => {
+  if (index < 0) {
+    return 2;
+  }
+  let candidate = PRIME_CACHE[PRIME_CACHE.length - 1] + 2;
+  while (PRIME_CACHE.length <= index) {
+    while (!isPrime(candidate)) {
+      candidate += 2;
+    }
+    PRIME_CACHE.push(candidate);
+    candidate += 2;
+  }
+  return PRIME_CACHE[index];
+};
+
+const primeToFrequency = (prime) => {
+  const normalized = Math.log(Math.max(prime, 2)) / PRIME_LOG_RANGE;
+  return clamp(20 + normalized * 1980, 20, 2000);
+};
 
 export async function startSimulation({
   canvas,
@@ -143,6 +184,10 @@ export async function startSimulation({
     soundFrequency: settings.soundFrequency,
     soundStrength: settings.soundStrength,
     soundWaveMode: settings.soundWaveMode || 4,
+    primeFieldEnabled: Boolean(settings.primeFieldEnabled),
+    primeFieldSpeed: Number(settings.primeFieldSpeed ?? 0.35),
+    primeFieldStrength: Number(settings.primeFieldStrength ?? 0.6),
+    primeFieldSpread: Number(settings.primeFieldSpread ?? 0.45),
     // Sound Wave Towers
     towers: [],
     selectedTowerIndex: -1,
@@ -183,18 +228,53 @@ export async function startSimulation({
     state.screenY = clampedY;
   };
 
+  const updateActionFromTouch = (touch) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (touch.clientX - rect.left) / rect.width;
+    const y = (touch.clientY - rect.top) / rect.height;
+    const clampedX = clamp(x, 0, 1);
+    const clampedY = clamp(y, 0, 1);
+    state.actionX = clampedX * simWidth;
+    state.actionY = clampedY * simHeight;
+    state.mouseXchange = clampedX;
+    state.screenY = clampedY;
+  };
+
   canvas.addEventListener("contextmenu", (event) => event.preventDefault());
   canvas.addEventListener("pointermove", (event) => {
+    // Ignore secondary touch points (multi-touch)
+    if (event.pointerType === "touch" && event.isPrimary === false) {
+      return;
+    }
+    // Only handle events that target the canvas itself
+    if (event.target !== canvas) {
+      return;
+    }
+    // Prevent default to stop scrolling/panning on mobile during drag
+    event.preventDefault();
     updateActionFromPointer(event);
   });
   canvas.addEventListener("pointerdown", (event) => {
+    // Ignore secondary touch points (multi-touch)
+    if (event.pointerType === "touch" && event.isPrimary === false) {
+      return;
+    }
+    // Only handle events that target the canvas itself
+    if (event.target !== canvas) {
+      return;
+    }
+    // Prevent default to stop double-tap zoom on mobile
+    event.preventDefault();
+    
     updateActionFromPointer(event);
     if (canvas.setPointerCapture) {
       canvas.setPointerCapture(event.pointerId);
     }
-    if (event.button !== 0) {
+    // For mouse, only respond to left button
+    if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+    // Fire weapon action for both mouse and touch
     const action = state.weaponActions[state.weaponIndex];
     if (typeof action === "function") {
       action("pointer");
@@ -208,6 +288,62 @@ export async function startSimulation({
       canvas.releasePointerCapture(event.pointerId);
     }
   });
+
+  if (!("PointerEvent" in window)) {
+    let activeTouchId = null;
+    const findTouchById = (touchList, identifier) => {
+      for (let i = 0; i < touchList.length; i += 1) {
+        if (touchList[i].identifier === identifier) {
+          return touchList[i];
+        }
+      }
+      return null;
+    };
+
+    const handleTouchStart = (event) => {
+      if (activeTouchId === null && event.touches.length > 0) {
+        activeTouchId = event.touches[0].identifier;
+        updateActionFromTouch(event.touches[0]);
+      } else if (activeTouchId !== null) {
+        const touch = findTouchById(event.touches, activeTouchId);
+        if (touch) {
+          updateActionFromTouch(touch);
+        }
+      }
+      event.preventDefault();
+    };
+
+    const handleTouchMove = (event) => {
+      let touch = null;
+      if (activeTouchId !== null) {
+        touch = findTouchById(event.touches, activeTouchId);
+      }
+      if (!touch && event.touches.length > 0) {
+        touch = event.touches[0];
+        activeTouchId = touch.identifier;
+      }
+      if (touch) {
+        updateActionFromTouch(touch);
+      }
+      event.preventDefault();
+    };
+
+    const handleTouchEnd = (event) => {
+      if (activeTouchId === null) {
+        return;
+      }
+      const touch = findTouchById(event.touches, activeTouchId);
+      if (!touch) {
+        activeTouchId = null;
+      }
+      event.preventDefault();
+    };
+
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+    canvas.addEventListener("touchcancel", handleTouchEnd, { passive: false });
+  }
 
   configureCanvas(canvas, context, format, device);
   window.addEventListener("resize", () => configureCanvas(canvas, context, format, device));
@@ -588,9 +724,31 @@ export async function startSimulation({
       extraData[extraOffsets.spawnY + i] = state.randomSpawnY[i];
     }
     // Write tower data
-    extraData[extraOffsets.towerCount] = state.towers.length;
+    const userTowerCount = Math.min(state.towers.length, maxTowers);
+    let primeSlots = 0;
+    let primeBaseIndex = 0;
+    let primeSpin = 0;
+    let primePhase = 0;
+    let primeMaxRadius = 0;
+    let primeRadius = 0;
+    let primeStrength = 0;
+
+    if (state.primeFieldEnabled && userTowerCount < maxTowers) {
+      primeSlots = maxTowers - userTowerCount;
+      const primeSpeed = clamp(state.primeFieldSpeed ?? 0, 0, 1);
+      const primeSpread = clamp(state.primeFieldSpread ?? 0.45, 0.2, 0.7);
+      primeStrength = clamp(state.primeFieldStrength ?? 0.6, 0.05, 1.5);
+      primeBaseIndex = Math.floor(state.time * primeSpeed * 1.5);
+      primeSpin = state.time * primeSpeed * 0.7;
+      primePhase = state.time * primeSpeed * 2.0;
+      primeMaxRadius = clamp(0.12 + primeSpread * 0.45, 0.12, 0.48);
+      primeRadius = clamp(0.08 + primeSpread * 0.12, 0.05, 0.35);
+    }
+
+    const totalTowers = userTowerCount + primeSlots;
+    extraData[extraOffsets.towerCount] = totalTowers;
     for (let i = 0; i < maxTowers; i += 1) {
-      const tower = state.towers[i];
+      const tower = i < userTowerCount ? state.towers[i] : null;
       const baseIdx = extraOffsets.towerData + i * 6;
       if (tower) {
         extraData[baseIdx + 0] = tower.x;
@@ -599,6 +757,27 @@ export async function startSimulation({
         extraData[baseIdx + 3] = tower.frequency;
         extraData[baseIdx + 4] = tower.strength;
         extraData[baseIdx + 5] = tower.pattern;
+      } else if (i < totalTowers && primeSlots > 0) {
+        const slot = i - userTowerCount;
+        const primeIndex = primeBaseIndex + slot;
+        const prime = getPrime(primeIndex);
+        const angle = GOLDEN_ANGLE * (primeIndex + 1) + primeSpin;
+        const spiral = Math.sqrt((slot + 1) / (primeSlots + 1));
+        const radius = primeMaxRadius * spiral;
+        const x = (0.5 + Math.cos(angle) * radius) * simWidth;
+        const y = (0.5 + Math.sin(angle) * radius) * simHeight;
+        const pulse = 0.7 + 0.3 * Math.sin(primePhase + primeIndex * 0.9);
+        const pattern = SOUND_PATTERN_COUNT > 0 ? prime % SOUND_PATTERN_COUNT : 0;
+        extraData[baseIdx + 0] = x;
+        extraData[baseIdx + 1] = y;
+        extraData[baseIdx + 2] = clamp(
+          primeRadius * (0.85 + 0.15 * Math.cos(primeIndex * 0.3)),
+          0.05,
+          0.4
+        );
+        extraData[baseIdx + 3] = primeToFrequency(prime);
+        extraData[baseIdx + 4] = clamp(primeStrength * pulse, 0.05, 1.5);
+        extraData[baseIdx + 5] = pattern;
       } else {
         // Inactive tower
         extraData[baseIdx + 0] = 0;
