@@ -1,14 +1,37 @@
-import { COLOR_MODES, QUALITY_PRESETS, PARAMS_DIMENSION, WEAPON_MODES, SOUND_WAVE_MODES, TOWER_SETTINGS } from "./config.js";
+import {
+  COLOR_MODES,
+  QUALITY_PRESETS,
+  PARAMS_DIMENSION,
+  PARAMETERS_MATRIX,
+  POINT_LABELS,
+  WEAPON_MODES,
+  SOUND_WAVE_MODES,
+  TOWER_SETTINGS,
+} from "./config.js";
 import { clamp, lerp, setRandomSpawn, setVortexSpawn, setPulseSpawn } from "./utils.js";
-import { 
-  playWeaponSound, 
-  playQuantumShift, 
-  playNextLevel, 
+import {
+  playWeaponSound,
+  playQuantumShift,
+  playNextLevel,
   playSoundToggle,
   playWeaponSelect,
   setMasterVolume,
-  ensureAudioContext 
+  ensureAudioContext
 } from "./audio.js";
+
+const PRESET_SCALING_BY_NAME = (() => {
+  const map = new Map();
+  const scalingIndex = PARAMS_DIMENSION - 1;
+  for (let i = 0; i < POINT_LABELS.length; i += 1) {
+    const name = POINT_LABELS[i];
+    const factor = PARAMETERS_MATRIX[i]?.[scalingIndex];
+    if (!name || !Number.isFinite(factor)) {
+      continue;
+    }
+    map.set(name.toLowerCase(), factor);
+  }
+  return map;
+})();
 
 export function initControls(state, pointsManager, settings, qualityKey) {
   // Game state
@@ -626,36 +649,64 @@ export function initControls(state, pointsManager, settings, qualityKey) {
     return 0;
   };
 
-  const applyRenderSettingsFromParams = (params) => {
-    if (!Array.isArray(params) || params.length < 20) {
+  const applyRenderSettingsFromParams = (params, offset = 14) => {
+    if (!Array.isArray(params) || params.length < offset + 6) {
       return;
     }
     applyPresetSettings({
-      depositFactor: params[14],
-      decayFactor: params[15],
-      blurPasses: params[16],
-      drawOpacity: params[17],
-      fillOpacity: params[18],
-      dotSize: params[19],
+      depositFactor: params[offset],
+      decayFactor: params[offset + 1],
+      blurPasses: params[offset + 2],
+      drawOpacity: params[offset + 3],
+      fillOpacity: params[offset + 4],
+      dotSize: params[offset + 5],
     });
   };
 
-  const applySinglePreset = (payload, targetIndex) => {
+  const resolvePresetScalingFactor = (payload) => {
+    const name = typeof payload?.name === "string" ? payload.name.trim().toLowerCase() : "";
+    if (name && PRESET_SCALING_BY_NAME.has(name)) {
+      return PRESET_SCALING_BY_NAME.get(name);
+    }
+    return null;
+  };
+
+  const parsePresetPayload = (payload) => {
     const params = payload?.parameters;
     if (!Array.isArray(params) || params.length < 14) {
+      return null;
+    }
+    const renderOffset = params.length >= 21 ? 15 : 14;
+    const coreParams = params.slice(0, 14);
+    const explicitScaling =
+      params.length >= 21 && Number.isFinite(params[14]) ? Number(params[14]) : null;
+    const scalingFactor = Number.isFinite(explicitScaling)
+      ? explicitScaling
+      : resolvePresetScalingFactor(payload);
+    return { params, coreParams, renderOffset, scalingFactor };
+  };
+
+  const applySinglePreset = (payload, targetIndex) => {
+    const parsed = parsePresetPayload(payload);
+    if (!parsed) {
       flashStatus("Preset parameters missing or invalid.");
       return false;
     }
 
-    if (!pointsManager.applyPointPreset(targetIndex, params)) {
+    const applyTargets = targetIndex === 2 ? [0, 1] : [targetIndex];
+    const applied = applyTargets.every((slot) =>
+      pointsManager.applyPointPreset(slot, parsed.coreParams, parsed.scalingFactor)
+    );
+    if (!applied) {
       flashStatus("Preset parameters could not be applied.");
       return false;
     }
 
-    applyRenderSettingsFromParams(params);
+    applyRenderSettingsFromParams(parsed.params, parsed.renderOffset);
     updateAdvancedValues();
     state.transitionTriggerTime = state.time;
-    const targetLabel = targetIndex === 0 ? "Pen" : "Background";
+    const targetLabel =
+      targetIndex === 2 ? "Pen + Background" : targetIndex === 0 ? "Pen" : "Background";
     flashStatus(`Preset applied to ${targetLabel}.`);
     return true;
   };

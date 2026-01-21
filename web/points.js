@@ -134,7 +134,7 @@ export class PointsDataManager {
     this.currentSelectionIndex = index;
   }
 
-  applyPointPreset(selectionIndex, values) {
+  applyPointPreset(selectionIndex, values, scalingFactor) {
     if (!Array.isArray(values)) {
       return false;
     }
@@ -144,6 +144,9 @@ export class PointsDataManager {
     for (let j = 0; j < limit; j += 1) {
       const value = Number(values[j]);
       next[j] = Number.isFinite(value) ? value : next[j];
+    }
+    if (Number.isFinite(scalingFactor)) {
+      next[PARAMS_DIMENSION - 1] = scalingFactor;
     }
     this.currentPointsData[lineIndex] = next.slice();
     this.basePointsData[lineIndex] = next.slice();

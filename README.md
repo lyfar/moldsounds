@@ -53,6 +53,10 @@ Mouse and keyboard interaction is explained later below.
 
 The current best branches are `install-2` and `install-3` though text is in french. It's high resolution with up to 2 players/gamepads.
 
+### WebGPU version (browser)
+
+There is a WebGPU port with mouse + browser controls in `web/`. See `web/README.md` for how to run it locally.
+
 ### Some context to understand the technique
 
 The simulation algorithm is a more advanced version of the physarum simulation algorithm described by Jeff Jones in [this paper](https://uwe-repository.worktribe.com/output/980579/characteristics-of-pattern-formation-and-evolution-in-approximations-of-physarum-transport-networks).
