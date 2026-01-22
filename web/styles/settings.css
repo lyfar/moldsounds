@@ -1,0 +1,290 @@
+/* ============================================
+   SETTINGS PANEL - Right Side (Collapsed)
+   ============================================ */
+.settings-panel {
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  width: 240px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  z-index: 90;
+}
+
+body:not(.view-expert) .settings-section {
+  display: none;
+}
+
+body:not(.view-expert) .settings-section--debug {
+  display: block;
+}
+
+body:not(.view-expert) #nextLevel {
+  display: none;
+}
+
+body:not(.view-expert) .settings-panel {
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+body:not(.view-expert) .settings-section {
+  background: transparent;
+  border: none;
+  margin-bottom: 6px;
+}
+
+body:not(.view-expert) .settings-section summary {
+  background: transparent;
+  color: #fff;
+  border: none;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+body:not(.view-expert) .settings-section summary::before {
+  display: none;
+}
+
+body:not(.view-expert) .settings-content {
+  padding: 0 8px 8px;
+  gap: 6px;
+}
+
+body:not(.view-expert) .control-group {
+  background: transparent;
+  border: none;
+  padding: 0;
+  gap: 6px;
+}
+
+body:not(.view-expert) .control-group__label {
+  color: #fff;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+}
+
+body:not(.view-expert) .control label {
+  color: #fff;
+}
+
+body:not(.view-expert) .control select,
+body:not(.view-expert) .view-toggle {
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body:not(.view-expert) .control--info {
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body:not(.view-expert) .debug__log {
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.settings-section {
+  --section-accent: var(--accent);
+  --section-accent-soft: rgba(228, 166, 90, 0.14);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.settings-section--core {
+  --section-accent: var(--accent);
+  --section-accent-soft: rgba(228, 166, 90, 0.14);
+}
+
+.settings-section--flow {
+  --section-accent: var(--accent-2);
+  --section-accent-soft: rgba(112, 197, 181, 0.14);
+}
+
+.settings-section--render {
+  --section-accent: var(--accent-blue);
+  --section-accent-soft: rgba(106, 166, 216, 0.16);
+}
+
+.settings-section--presets {
+  --section-accent: var(--accent-olive);
+  --section-accent-soft: rgba(155, 184, 108, 0.16);
+}
+
+.settings-section--tuning {
+  --section-accent: var(--accent-slate);
+  --section-accent-soft: rgba(150, 169, 182, 0.16);
+}
+
+.settings-section--debug {
+  --section-accent: var(--accent-red);
+  --section-accent-soft: rgba(224, 90, 90, 0.14);
+}
+
+.settings-section summary {
+  padding: 10px 14px 10px 12px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 3px solid var(--section-accent);
+  background: linear-gradient(120deg, rgba(10, 14, 16, 0.65), var(--section-accent-soft));
+  list-style: none;
+  user-select: none;
+}
+
+.settings-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-section summary::before {
+  content: "▸";
+  margin-right: 0;
+  transition: transform 0.2s ease;
+  display: inline-block;
+  color: var(--section-accent);
+}
+
+.settings-section[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.settings-content {
+  padding: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-group {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  background: linear-gradient(140deg, rgba(12, 16, 18, 0.75), var(--section-accent-soft));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.control-group__label {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--section-accent);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.control select,
+.control input[type="range"] {
+  width: 100%;
+}
+
+.control select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+.control--toggle {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.control--toggle input {
+  width: 18px;
+  height: 18px;
+}
+
+.control--info {
+  font-size: 0.75rem;
+  color: var(--accent-olive);
+  background: rgba(155, 184, 108, 0.14);
+  border: 1px solid rgba(155, 184, 108, 0.25);
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(228, 166, 90, 0.5),
+    rgba(112, 197, 181, 0.55),
+    rgba(106, 166, 216, 0.5)
+  );
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f2e8da;
+  border: 2px solid rgba(228, 166, 90, 0.6);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f2e8da;
+  border: 2px solid rgba(228, 166, 90, 0.6);
+  cursor: pointer;
+}
+
+.button-row {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+}
+
+.button-row button {
+  flex: 1;
+  min-width: 60px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.button-row button:hover {
+  border-color: rgba(228, 166, 90, 0.5);
+}

@@ -1,0 +1,236 @@
+/* ============================================
+   WEAPONS PANEL - Left Side
+   ============================================ */
+.weapons-panel {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 120;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  touch-action: auto;
+  pointer-events: auto;
+}
+
+.weapons-panel__title {
+  display: none;
+}
+
+.weapons-panel__list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(54px, 1fr));
+  gap: 8px;
+  width: min(90vw, 520px);
+}
+
+.weapon {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: rgba(12, 16, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 54px;
+}
+
+.weapon:hover:not(.weapon--cooldown) {
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: none;
+}
+
+.weapon__preview {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.weapon__key {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: var(--ink);
+}
+
+.weapon__label {
+  font-size: 0.62rem;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.weapon--active {
+  border-color: var(--accent);
+  box-shadow: none;
+  background: rgba(228, 166, 90, 0.12);
+}
+
+.weapon--active .weapon__preview {
+  box-shadow: inset 0 0 0 1px rgba(228, 166, 90, 0.5);
+}
+
+.weapon--burst .weapon__preview {
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0.2));
+}
+
+.weapon--ring .weapon__preview {
+  background: radial-gradient(circle at 50% 50%, rgba(112, 197, 181, 0.3), rgba(0, 0, 0, 0.3));
+}
+
+.weapon--wave .weapon__preview {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(0, 0, 0, 0.3));
+}
+
+.weapon--vortex .weapon__preview {
+  background: conic-gradient(from 120deg, rgba(228, 166, 90, 0.4), rgba(0, 0, 0, 0.2));
+}
+
+.weapon--pulse .weapon__preview {
+  background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.4), rgba(0, 0, 0, 0.35));
+}
+
+.weapon--cooldown {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.weapon--cooldown::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(228, 166, 90, 0.3) var(--cooldown-progress, 0%), transparent var(--cooldown-progress, 0%));
+  border-radius: 10px;
+}
+
+/* ============================================
+   ANNIHILATOR PANEL - Bottom Left (Weapon 6)
+   ============================================ */
+.annihilator-panel {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 12px;
+  min-width: 220px;
+  z-index: 100;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.annihilator-panel--active {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 20px rgba(112, 197, 181, 0.3);
+}
+
+.annihilator-panel__button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(112, 197, 181, 0.1);
+  border: 1px solid rgba(112, 197, 181, 0.3);
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 12px;
+  transition: all 0.15s ease;
+}
+
+.annihilator-panel__button:hover {
+  background: rgba(112, 197, 181, 0.2);
+  border-color: rgba(112, 197, 181, 0.5);
+}
+
+.annihilator-panel--active .annihilator-panel__button {
+  background: rgba(112, 197, 181, 0.25);
+  border-color: var(--accent-2);
+}
+
+.annihilator-panel__key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  background: rgba(112, 197, 181, 0.2);
+  border: 1px solid rgba(112, 197, 181, 0.4);
+  flex-shrink: 0;
+}
+
+.annihilator-panel--active .annihilator-panel__key {
+  background: var(--accent-2);
+  color: #1a1a1a;
+}
+
+.annihilator-panel__title {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex: 1;
+  text-align: left;
+}
+
+.annihilator-panel__status {
+  font-size: 0.7rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(100, 100, 100, 0.3);
+  color: var(--muted);
+}
+
+.annihilator-panel--active .annihilator-panel__status {
+  background: var(--accent-2);
+  color: #1a1a1a;
+}
+
+.annihilator-panel__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.annihilator-control label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.annihilator-control input[type="range"] {
+  width: 100%;
+}
+
+.annihilator-control select {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+}

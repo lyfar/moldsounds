@@ -1,0 +1,507 @@
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 900px), (max-height: 700px) {
+  body {
+    font-size: 14px;
+  }
+
+  .mobile-controls {
+    display: flex;
+    left: calc(10px + env(safe-area-inset-left));
+    bottom: calc(env(safe-area-inset-bottom) + 96px);
+  }
+
+  .game-hud {
+    left: calc(10px + env(safe-area-inset-left));
+    top: calc(10px + env(safe-area-inset-top));
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(10px);
+  }
+
+  .game-hud__title {
+    display: none;
+  }
+
+  .game-hud__stats {
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .stat__value {
+    font-size: 1.2rem;
+  }
+
+  .stat__label {
+    font-size: 0.55rem;
+  }
+
+  .game-hud__hint {
+    display: none;
+  }
+
+  .flow-control-hud {
+    top: calc(env(safe-area-inset-top) + 108px);
+    bottom: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 10px;
+    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    width: min(92vw, 340px);
+  }
+
+  .flow-hint {
+    display: none;
+  }
+
+  .flow-indicator {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .flow-indicator .flow-label {
+    font-size: 0.6rem;
+  }
+
+  .flow-indicator .flow-value {
+    font-size: 0.7rem;
+    min-width: 0;
+  }
+
+  .flow-controls-compact {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .flow-slider {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    font-size: 0.6rem;
+  }
+
+  .flow-slider span {
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+
+  .flow-slider input[type="range"] {
+    width: 100%;
+  }
+
+  .flow-reset {
+    grid-column: 1 / -1;
+    justify-self: center;
+    padding: 8px 14px;
+    font-size: 0.7rem;
+  }
+
+  .weapons-panel {
+    left: 50%;
+    bottom: max(env(safe-area-inset-bottom, 0px), 10px);
+    transform: translateX(-50%);
+    width: min(96vw, 520px);
+    max-width: calc(100vw - 16px);
+    padding: 6px 8px;
+    border-radius: 14px;
+    background: rgba(12, 16, 18, 0.92);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(12px);
+    touch-action: auto;
+    pointer-events: auto;
+  }
+
+  .weapons-panel__title {
+    display: none;
+  }
+
+  .weapons-panel__list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(52px, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .weapon {
+    min-width: 52px;
+    padding: 6px 4px;
+    border-radius: 10px;
+    gap: 4px;
+  }
+
+  .weapon__preview {
+    width: 30px;
+    height: 30px;
+  }
+
+  .weapon__label {
+    font-size: 0.56rem;
+  }
+
+  .tower-panel,
+  .settings-panel {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom) + 92px);
+    width: min(90vw, 340px);
+    max-height: 48vh;
+    transform: translate(-50%, 120%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    z-index: 115;
+    background: rgba(12, 16, 18, 0.78);
+    backdrop-filter: blur(12px);
+  }
+
+  body.mobile-show-towers .tower-panel {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.mobile-show-settings .settings-panel {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .tower-panel {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .tower-panel__list {
+    max-height: 16vh;
+    overflow-y: auto;
+  }
+
+  .tower-panel__place-btn {
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+
+  .tower-control label {
+    font-size: 0.78rem;
+  }
+
+  .tower-control select,
+  .tower-control input[type="url"],
+  .tower-control input[type="file"] {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .tower-type-btn {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .tower-audio__row {
+    flex-direction: column;
+  }
+
+  .tower-action-btn {
+    width: 100%;
+  }
+
+  .settings-panel {
+    max-height: 48vh;
+    overflow-y: auto;
+  }
+
+  .control--info {
+    font-size: 0.68rem;
+    padding: 6px 8px;
+  }
+
+  .settings-section summary {
+    font-size: 0.85rem;
+    padding: 12px 14px;
+  }
+
+  .settings-content {
+    gap: 10px;
+  }
+
+  .control-group {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .control-group__label {
+    font-size: 0.66rem;
+  }
+
+  .control label {
+    font-size: 0.78rem;
+  }
+
+  .control select {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .control--toggle input {
+    width: 22px;
+    height: 22px;
+  }
+
+  input[type="range"] {
+    height: 10px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+  }
+
+  .button-row button {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+
+  .param-list {
+    max-height: 140px;
+    gap: 6px;
+  }
+
+  .param-controls input[type="number"] {
+    width: 56px;
+    font-size: 0.7rem;
+  }
+
+  .quick-actions {
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom) + 88px);
+    right: calc(10px + env(safe-area-inset-right));
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .quick-action {
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 0.78rem;
+  }
+
+  .quick-action kbd {
+    display: none;
+  }
+
+  .weapon-status {
+    bottom: calc(env(safe-area-inset-bottom) + 70px);
+    font-size: 0.75rem;
+  }
+
+  .status {
+    right: calc(10px + env(safe-area-inset-right));
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    font-size: 0.65rem;
+  }
+
+  .annihilator-panel {
+    left: calc(10px + env(safe-area-inset-left));
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    min-width: 180px;
+  }
+
+  .mobile-controls,
+  .mobile-backdrop {
+    display: none !important;
+  }
+
+  .tower-dock {
+    display: flex;
+    bottom: calc(env(safe-area-inset-bottom) + 76px);
+  }
+
+  .flow-control-hud {
+    display: none;
+  }
+
+  .tower-panel {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom) + 74px);
+    width: min(80vw, 420px);
+    max-height: 38vh;
+    transform: translate(-50%, 120%);
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(12, 16, 18, 0.72);
+  }
+
+  body.mobile-show-towers .tower-panel {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .settings-panel {
+    position: fixed;
+    left: auto;
+    right: calc(8px + env(safe-area-inset-right));
+    top: calc(8px + env(safe-area-inset-top));
+    bottom: auto;
+    width: min(220px, 52vw);
+    max-height: 46vh;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    background: rgba(12, 16, 18, 0.72);
+  }
+
+  body.mobile-show-settings .settings-panel {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .settings-section summary {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    border-left: none;
+    background: rgba(12, 16, 18, 0.6);
+  }
+
+  .settings-section summary::before {
+    margin-right: 4px;
+  }
+
+  .settings-content {
+    padding: 0 10px 10px;
+    gap: 6px;
+  }
+
+  .control-group {
+    padding: 6px;
+    gap: 6px;
+    background: rgba(12, 16, 18, 0.55);
+  }
+
+  .control-group__label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .control label {
+    font-size: 0.7rem;
+  }
+
+  input[type="range"] {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+    background: #f4f1ea;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #f4f1ea;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
+  .button-row button {
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    background: rgba(12, 16, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .tower-panel__place-btn {
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--panel-border);
+    background: rgba(12, 16, 18, 0.6);
+    font-size: 0.78rem;
+  }
+
+  .tower-panel__place-btn kbd {
+    display: none;
+  }
+
+  .tower-panel__place-btn--active {
+    animation: none;
+    border-style: solid;
+    background: rgba(112, 197, 181, 0.18);
+  }
+
+  .tower-panel__title,
+  .tower-section-title,
+  .weapons-panel__title,
+  .control-group__label,
+  .stat__label {
+    text-transform: none;
+    letter-spacing: 0.03em;
+  }
+
+  .tower-action-btn {
+    background: rgba(12, 16, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--muted);
+  }
+
+  .tower-action-btn--neutral {
+    color: var(--ink);
+    border-color: rgba(112, 197, 181, 0.3);
+  }
+
+  .tower-action-btn:hover {
+    background: rgba(12, 16, 18, 0.7);
+  }
+
+  .quick-actions {
+    bottom: calc(env(safe-area-inset-bottom) + 86px);
+    right: calc(8px + env(safe-area-inset-right));
+    gap: 6px;
+  }
+
+  .quick-action {
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    background: rgba(12, 16, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .quick-action:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .quick-action--primary {
+    background: rgba(228, 166, 90, 0.12);
+    border-color: rgba(228, 166, 90, 0.35);
+    box-shadow: none;
+  }
+
+  .simple-tower__button {
+    width: 140px;
+    height: 140px;
+  }
+
+}

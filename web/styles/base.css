@@ -1,0 +1,186 @@
+:root {
+  color-scheme: only light;
+  --ink: #f5efe6;
+  --muted: #c9bca7;
+  --panel: rgba(12, 16, 18, 0.85);
+  --panel-border: rgba(233, 202, 151, 0.25);
+  --accent: #e4a65a;
+  --accent-2: #70c5b5;
+  --accent-blue: #6aa6d8;
+  --accent-olive: #9bb86c;
+  --accent-slate: #96a9b6;
+  --accent-red: #e05a5a;
+  --shadow: rgba(8, 12, 16, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: none;
+  touch-action: none;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+html {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  background: radial-gradient(1200px 800px at 70% 20%, rgba(122, 193, 179, 0.25), transparent 55%),
+    radial-gradient(800px 600px at 10% 90%, rgba(220, 156, 84, 0.28), transparent 60%),
+    linear-gradient(140deg, #060809, #121a1c 55%, #1a1d1a 100%);
+  color: var(--ink);
+  height: var(--app-height, 100vh);
+  overflow: hidden;
+}
+
+body:not(.view-expert) {
+  --ink: #f2f2f2;
+  --muted: #b7b7b7;
+  --panel: rgba(0, 0, 0, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --accent: #f2f2f2;
+  --accent-2: #dcdcdc;
+  --accent-blue: #c8c8c8;
+  --accent-olive: #c8c8c8;
+  --accent-slate: #c0c0c0;
+  --accent-red: #f2f2f2;
+  background: #000;
+}
+
+body:not(.view-expert) #gfx {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.92));
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#gfx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.6));
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  object-fit: contain;
+}
+
+#pen-indicator {
+  position: absolute;
+  border: 1px dashed rgba(245, 239, 230, 0.6);
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  box-shadow: 0 0 30px rgba(228, 166, 90, 0.35);
+  transform: translate(-50%, -50%);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.simple-tower {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  touch-action: auto;
+  pointer-events: auto;
+}
+
+.simple-tower--hidden {
+  display: none;
+}
+
+.simple-tower__button {
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(12, 16, 18, 0.65);
+  color: var(--ink);
+  font-family: inherit;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  position: relative;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.simple-tower__button:hover {
+  border-color: rgba(112, 197, 181, 0.5);
+  background: rgba(12, 16, 18, 0.75);
+  transform: scale(1.02);
+}
+
+.simple-tower__button--active {
+  border-color: rgba(112, 197, 181, 0.6);
+  box-shadow: 0 0 18px rgba(112, 197, 181, 0.35);
+}
+
+.simple-tower__ring {
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  border: 1px dashed rgba(245, 239, 230, 0.35);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.simple-tower__text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.view-toggle {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.view-toggle[aria-pressed="true"] {
+  border-color: rgba(112, 197, 181, 0.5);
+  background: rgba(112, 197, 181, 0.15);
+}

@@ -1,0 +1,62 @@
+/* ============================================
+   PARAM LIST (Tuning)
+   ============================================ */
+.param-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.param-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.param-row label {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.param-controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.param-controls input[type="range"] {
+  flex: 1;
+}
+
+.param-controls input[type="number"] {
+  width: 65px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.72rem;
+}
+
+.advanced__label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.debug__log {
+  margin: 0;
+  padding: 8px;
+  background: rgba(10, 12, 14, 0.8);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  max-height: 100px;
+  overflow: auto;
+  white-space: pre-wrap;
+}

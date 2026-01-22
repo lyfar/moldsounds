@@ -1,0 +1,156 @@
+/* ============================================
+   GAME HUD - Top Left
+   ============================================ */
+.game-hud {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+}
+
+.game-hud__title {
+  font-size: 1.4rem;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(228, 166, 90, 0.5);
+  margin-bottom: 12px;
+}
+
+.game-hud__stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 10px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat__label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.stat__value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.game-hud__hint {
+  font-size: 0.72rem;
+  color: rgba(201, 188, 167, 0.6);
+}
+
+.game-hud__hint kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(228, 166, 90, 0.2);
+  border: 1px solid rgba(228, 166, 90, 0.3);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.68rem;
+  margin-right: 4px;
+}
+
+/* ============================================
+   FLOW CONTROL HUD - Bottom Center
+   ============================================ */
+.flow-control-hud {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 10px 20px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.flow-controls-compact {
+  display: none;
+}
+
+.flow-slider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.flow-slider input[type="range"] {
+  width: 90px;
+}
+
+.flow-reset {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(20, 24, 26, 0.9);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.flow-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.flow-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.flow-value {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--ink);
+  font-family: monospace;
+  min-width: 100px;
+  text-align: center;
+}
+
+.flow-value.active {
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(228, 166, 90, 0.5);
+}
+
+.flow-hint {
+  font-size: 0.65rem;
+  color: rgba(201, 188, 167, 0.5);
+  border-left: 1px solid var(--panel-border);
+  padding-left: 16px;
+  margin-left: 8px;
+}
+
+.flow-hint kbd {
+  display: inline-block;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(228, 166, 90, 0.15);
+  border: 1px solid rgba(228, 166, 90, 0.25);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.6rem;
+  margin: 0 2px;
+}

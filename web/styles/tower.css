@@ -1,0 +1,323 @@
+/* ============================================
+   TOWER PANEL - Bottom Left
+   ============================================ */
+.tower-panel {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 12px;
+  min-width: 220px;
+  max-width: 260px;
+  max-height: 40vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+body:not(.view-expert) .tower-panel {
+  display: none;
+}
+
+body.view-expert .simple-tower {
+  display: none;
+}
+
+.tower-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.tower-panel__title {
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  color: var(--accent-2);
+}
+
+.tower-panel__count {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.tower-panel__place-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(112, 197, 181, 0.15);
+  border: 2px dashed rgba(112, 197, 181, 0.4);
+  color: var(--ink);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  transition: all 0.15s ease;
+}
+
+.tower-panel__place-btn:hover {
+  background: rgba(112, 197, 181, 0.25);
+  border-color: var(--accent-2);
+}
+
+.tower-panel__place-btn--active {
+  background: rgba(112, 197, 181, 0.3);
+  border-style: solid;
+  border-color: var(--accent-2);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(112, 197, 181, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(112, 197, 181, 0.6); }
+}
+
+.tower-panel__place-btn kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(112, 197, 181, 0.2);
+  border: 1px solid rgba(112, 197, 181, 0.3);
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+
+.tower-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tower-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(40, 50, 55, 0.6);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tower-item:hover {
+  background: rgba(50, 60, 65, 0.8);
+  border-color: var(--panel-border);
+}
+
+.tower-item--selected {
+  background: rgba(112, 197, 181, 0.15);
+  border-color: var(--accent-2);
+}
+
+.tower-item__num {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--accent-2);
+  min-width: 20px;
+}
+
+.tower-item__info {
+  flex: 1;
+  font-size: 0.7rem;
+  color: var(--ink);
+}
+
+.tower-item__delete {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(224, 90, 90, 0.2);
+  border: none;
+  color: var(--accent-red);
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.tower-item__delete:hover {
+  opacity: 1;
+  background: rgba(224, 90, 90, 0.3);
+}
+
+.tower-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(30, 40, 45, 0.5);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.tower-panel__section--edit {
+  background: rgba(228, 166, 90, 0.1);
+  border: 1px solid rgba(228, 166, 90, 0.3);
+}
+
+.tower-section-title {
+  font-size: 0.65rem;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.tower-panel__section--edit .tower-section-title {
+  color: var(--accent);
+}
+
+.tower-control label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.tower-control input[type="range"] {
+  width: 100%;
+}
+
+.tower-control select {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+
+.tower-type-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.tower-type-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tower-type-btn--active {
+  color: var(--ink);
+  background: rgba(112, 197, 181, 0.2);
+  border-color: rgba(112, 197, 181, 0.45);
+}
+
+.tower-type-btn:focus-visible {
+  outline: 2px solid rgba(112, 197, 181, 0.6);
+  outline-offset: 1px;
+}
+
+.tower-control--stack label {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.tower-control input[type="url"],
+.tower-control input[type="file"] {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(20, 24, 26, 0.9);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.75rem;
+}
+
+.tower-control input[type="file"]::file-selector-button {
+  margin-right: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(112, 197, 181, 0.2);
+  border: 1px solid rgba(112, 197, 181, 0.35);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.tower-audio__row {
+  display: flex;
+  gap: 8px;
+}
+
+.tower-audio__status {
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.tower-audio__status--error {
+  color: var(--accent-red);
+}
+
+.tower-audio__meter {
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(40, 50, 55, 0.8);
+  overflow: hidden;
+}
+
+.tower-audio__meter span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(112, 197, 181, 0.6), rgba(228, 166, 90, 0.8));
+  transition: width 0.08s ease;
+}
+
+.tower-panel__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tower-action-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(224, 90, 90, 0.1);
+  border: 1px solid rgba(224, 90, 90, 0.3);
+  color: var(--accent-red);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.tower-action-btn:hover {
+  background: rgba(224, 90, 90, 0.2);
+}
+
+.tower-action-btn--neutral {
+  background: rgba(112, 197, 181, 0.12);
+  border-color: rgba(112, 197, 181, 0.35);
+  color: var(--ink);
+}
+
+.tower-action-btn--neutral:hover {
+  background: rgba(112, 197, 181, 0.22);
+}
