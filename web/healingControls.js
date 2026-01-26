@@ -21,9 +21,9 @@ const DEFAULTS = {
   decay: 12.7,
   binauralBeat: 12.9,
   reverbMix: 0.94,
-  radius: 0.32,
-  strength: 0.55,
-  response: 1.4,
+  radius: 0.45,
+  strength: 0.05,
+  response: 0.6,
   pattern: 1,
 };
 
@@ -33,6 +33,14 @@ const BOWL_NORM = average(BOWL_RATIOS) / 12;
 const RIEMANN_NORM = average(RIEMANN_ZEROS) / 33;
 const DRUM_NORM = average(DRUM_RATIOS) / 3;
 const KOSHI_NORM = average(KOSHI_INTERVALS) / 2;
+const INSTRUMENT_PATTERNS = {
+  bowl: 1,
+  crystal: 2,
+  gong: 0,
+  drum: 3,
+  chime: 4,
+  wood: 0,
+};
 
 const calculateIntentionMath = (text) => {
   if (!text) {
@@ -183,6 +191,9 @@ export function initHealingControls({ state, settings, pointsManager }) {
     setStatus,
     getInstrumentLabel: (instrumentId) =>
       INSTRUMENTS.find((item) => item.id === instrumentId)?.label || instrumentId,
+    setHolding: (isHolding) => {
+      document.body.classList.toggle("healing-hold", isHolding);
+    },
     canvas: document.getElementById("gfx"),
   });
   state.weaponActions = [instrumentImpulse.emitSound];
@@ -217,12 +228,12 @@ export function initHealingControls({ state, settings, pointsManager }) {
         };
       case "crystal":
         return {
-          mixChladni: 0.3,
-          mixCymatics: 0.6 + seedBoost * 0.2,
-          mixSpiral: 0.85 + seedBoost * 0.2,
-          mixStanding: 0.2,
-          radialMod: 0.4 + seedBoost * 0.4,
-          angularMod: 0.25 + binauralNorm * 0.45,
+          mixChladni: 0.6 + seedBoost * 0.1,
+          mixCymatics: 0.55 + seedBoost * 0.1,
+          mixSpiral: 0.35 + seedBoost * 0.15,
+          mixStanding: 0.35 + decayNorm * 0.1,
+          radialMod: 0.35 + seedBoost * 0.2,
+          angularMod: 0.25 + binauralNorm * 0.2,
         };
       case "drum":
         return {
@@ -275,6 +286,12 @@ export function initHealingControls({ state, settings, pointsManager }) {
   };
   const setActiveInstrument = (instrumentId) => {
     activeInstrument = instrumentId;
+    if (INSTRUMENT_PATTERNS[instrumentId] !== undefined) {
+      bowl.pattern = INSTRUMENT_PATTERNS[instrumentId];
+      if (ui.pattern) {
+        ui.pattern.value = String(bowl.pattern);
+      }
+    }
     instrumentButtons.forEach((button, id) => {
       button.classList.toggle("weapon--active", id === activeInstrument);
     });

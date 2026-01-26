@@ -1,17 +1,24 @@
 import { clamp } from "../utils.js";
 import { TOWER_SETTINGS } from "../config.js";
 
-const CONTINUOUS_INSTRUMENTS = new Set(["bowl", "crystal"]);
+const CONTINUOUS_INSTRUMENTS = new Set(["bowl", "crystal", "chime"]);
 const HOLD_INTERVALS = {
   bowl: 0.7,
   crystal: 0.5,
+  chime: 0.85,
 };
+const CHIME_BURST_DELAYS = [140, 280];
 
 const INSTRUMENT_IMPACT_PROFILES = {
   bowl: { strengthBoost: 0.18, chladniBoost: 0.08 },
   gong: { strengthBoost: 0.32, cymaticsBoost: 0.18, radialBoost: 0.2 },
   wood: { strengthBoost: 0.22, standingBoost: 0.22 },
-  crystal: { strengthBoost: 0.28, spiralBoost: 0.2, angularBoost: 0.18 },
+  crystal: {
+    strengthBoost: 0.18,
+    chladniBoost: 0.08,
+    spiralBoost: 0.08,
+    angularBoost: 0.06,
+  },
   drum: { strengthBoost: 0.3, radiusBoost: 0.16, standingBoost: 0.3 },
   chime: { strengthBoost: 0.2, spiralBoost: 0.18, angularBoost: 0.22 },
 };
@@ -24,6 +31,7 @@ export function createInstrumentImpulse({
   getInstrumentParams,
   setStatus,
   getInstrumentLabel,
+  setHolding,
   canvas,
 }) {
   let impactLevel = 0;
@@ -39,6 +47,15 @@ export function createInstrumentImpulse({
     audio.triggerInstrument(instrumentId, params);
     impactInstrument = instrumentId;
     impactLevel = 1;
+  };
+
+  const triggerInstrument = (instrumentId, { burst = false } = {}) => {
+    playInstrument(instrumentId);
+    if (burst && instrumentId === "chime") {
+      CHIME_BURST_DELAYS.forEach((delay) => {
+        setTimeout(() => playInstrument(instrumentId), delay);
+      });
+    }
   };
 
   const getHoldInterval = (instrumentId, decay) => {
@@ -57,6 +74,9 @@ export function createInstrumentImpulse({
     holdActive = false;
     holdPointerId = null;
     holdInstrument = null;
+    if (typeof setHolding === "function") {
+      setHolding(false);
+    }
     if (holdTimer) {
       clearTimeout(holdTimer);
       holdTimer = null;
@@ -73,7 +93,7 @@ export function createInstrumentImpulse({
       if (!holdActive || !holdInstrument) {
         return;
       }
-      playInstrument(holdInstrument);
+      triggerInstrument(holdInstrument, { burst: holdInstrument === "chime" });
       scheduleHold();
     }, interval * 1000);
   };
@@ -86,6 +106,9 @@ export function createInstrumentImpulse({
     holdActive = true;
     holdPointerId = pointerId;
     holdInstrument = activeInstrument;
+    if (typeof setHolding === "function") {
+      setHolding(true);
+    }
     scheduleHold();
   };
 
@@ -128,12 +151,7 @@ export function createInstrumentImpulse({
 
   const emitSound = () => {
     const activeInstrument = getActiveInstrument();
-    playInstrument(activeInstrument);
-    if (activeInstrument === "chime") {
-      [140, 280].forEach((delay) => {
-        setTimeout(() => playInstrument(activeInstrument), delay);
-      });
-    }
+    triggerInstrument(activeInstrument, { burst: activeInstrument === "chime" });
     if (typeof setStatus === "function") {
       const label = getInstrumentLabel?.(activeInstrument) || activeInstrument;
       setStatus(`${label} emitted.`);

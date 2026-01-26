@@ -9,6 +9,8 @@
   --accent-olive: #cfcfcf;
   --accent-slate: #c4c4c4;
   --accent-red: #f2f2f2;
+  --dim-duration: 2s;
+  --dim-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 body.healing-view {
@@ -164,6 +166,20 @@ body.healing-show-settings .settings-panel {
   width: min(96vw, 920px);
   grid-template-columns: 1fr;
   align-items: start;
+}
+
+.healing-settings,
+.healing-tools,
+.healing-settings-toggle {
+  transition: opacity var(--dim-duration) var(--dim-ease),
+    filter var(--dim-duration) var(--dim-ease);
+}
+
+body.healing-hold .healing-settings,
+body.healing-hold .healing-tools,
+body.healing-hold .healing-settings-toggle {
+  opacity: 0.45;
+  filter: brightness(0.9) saturate(0.7);
 }
 
 .healing-tools .weapons-panel__list {
