@@ -34,18 +34,6 @@
           </div>
         </details>
 
-        <details class="settings-section settings-section--flow">
-          <summary>Frequencies</summary>
-          <div class="settings-content">
-            <div class="control-group">
-              <div class="control-group__label">Solfeggio & Planetary</div>
-              <div class="control">
-                <div id="frequencyPresets" class="healing-presets"></div>
-              </div>
-            </div>
-          </div>
-        </details>
-
         <details class="settings-section settings-section--render">
           <summary>Audio Core</summary>
           <div class="settings-content">
@@ -56,16 +44,16 @@
                 <input id="frequency" type="range" min="120" max="1200" step="0.01" value="528" />
               </div>
               <div class="control">
-                <label for="decay">Golden Decay <span id="decayValue">6.5s</span></label>
-                <input id="decay" type="range" min="1" max="15" step="0.1" value="6.5" />
+                <label for="decay">Golden Decay <span id="decayValue">12.7s</span></label>
+                <input id="decay" type="range" min="1" max="15" step="0.1" value="12.7" />
               </div>
               <div class="control">
-                <label for="binauralBeat">Schumann / Wind <span id="binauralBeatValue">7.83 Hz</span></label>
-                <input id="binauralBeat" type="range" min="0.1" max="15" step="0.1" value="7.83" />
+                <label for="binauralBeat">Schumann / Wind <span id="binauralBeatValue">12.90 Hz</span></label>
+                <input id="binauralBeat" type="range" min="0.1" max="15" step="0.1" value="12.9" />
               </div>
               <div class="control">
-                <label for="reverbMix">Reverb Mix <span id="reverbMixValue">0.618</span></label>
-                <input id="reverbMix" type="range" min="0" max="1" step="0.001" value="0.618" />
+                <label for="reverbMix">Reverb Mix <span id="reverbMixValue">0.940</span></label>
+                <input id="reverbMix" type="range" min="0" max="1" step="0.001" value="0.94" />
               </div>
             </div>
           </div>
@@ -122,22 +110,25 @@
         </details>
       </aside>
 
-      <div class="healing-dock" aria-label="Healing quick controls">
-        <button id="emitSound" class="healing-emit" type="button">
-          <span class="healing-emit__label">Emit</span>
-          <span class="healing-emit__sub">Tap to play</span>
-        </button>
-        <div class="healing-dock__status">
-          <div id="healingStatus" class="healing-status">Choose an instrument and emit.</div>
-          <div class="healing-meter" aria-hidden="true">
-            <span id="healingMeter"></span>
-          </div>
-        </div>
-        <button id="healingSettingsToggle" class="healing-settings-toggle" type="button">Settings</button>
-      </div>
+      <button
+        id="healingSettingsToggle"
+        class="healing-settings-toggle"
+        type="button"
+        aria-label="Settings"
+      >
+        <span class="healing-settings-toggle__icon" aria-hidden="true"></span>
+        <span class="healing-settings-toggle__label">Settings</span>
+      </button>
 
-      <div class="weapons-panel healing-tools" aria-label="Instruments">
-        <div id="instrumentGrid" class="weapons-panel__list" role="group" aria-label="Instruments"></div>
+      <div class="weapons-panel healing-tools" aria-label="Healing controls">
+        <div class="healing-tools__section healing-tools__section--instruments">
+          <div class="healing-tools__title">Instruments</div>
+          <div id="instrumentGrid" class="weapons-panel__list" role="group" aria-label="Instruments"></div>
+        </div>
+        <div class="healing-tools__section healing-tools__section--presets">
+          <div class="healing-tools__title">Frequencies</div>
+          <div id="frequencyPresets" class="healing-presets" role="group" aria-label="Frequency presets"></div>
+        </div>
       </div>
 
       <div id="status" class="status status--hidden" role="status" aria-live="polite"></div>

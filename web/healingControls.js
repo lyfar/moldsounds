@@ -3,10 +3,10 @@ import { clamp } from "./utils.js";
 import { applyPresetPayload } from "./presets/payload.js";
 import { loadPresetLibrary, updatePresetInfo } from "./presets/library.js";
 import { createHealingAudio } from "./healing/audioEngine.js";
+import { PRESET_ICONS } from "./healing/presetIcons.js";
 import {
   SACRED_FREQUENCIES,
   INSTRUMENTS,
-  PHI,
   RIEMANN_ZEROS,
   DRUM_RATIOS,
   KOSHI_INTERVALS,
@@ -16,9 +16,9 @@ const DEFAULTS = {
   activeInstrument: "bowl",
   selectedPreset: 4,
   frequency: 528,
-  decay: PHI * 4,
-  binauralBeat: 7.83,
-  reverbMix: 0.618,
+  decay: 12.7,
+  binauralBeat: 12.9,
+  reverbMix: 0.94,
   radius: 0.32,
   strength: 0.55,
   response: 1.4,
@@ -46,7 +46,6 @@ const calculateIntentionMath = (text) => {
 export function initHealingControls({ state, settings, pointsManager }) {
   const ui = {
     instrumentGrid: document.getElementById("instrumentGrid"),
-    emitSound: document.getElementById("emitSound"),
     status: document.getElementById("healingStatus"),
     meter: document.getElementById("healingMeter"),
     settingsToggle: document.getElementById("healingSettingsToggle"),
@@ -75,7 +74,12 @@ export function initHealingControls({ state, settings, pointsManager }) {
   };
 
   const audio = createHealingAudio();
-  const emitSub = ui.emitSound?.querySelector(".healing-emit__sub") || null;
+
+  const renderBase = {
+    depositFactor: settings.depositFactor ?? 0.003,
+    drawOpacity: settings.drawOpacity ?? 1,
+    fillOpacity: settings.fillOpacity ?? 0,
+  };
 
   let activeInstrument = DEFAULTS.activeInstrument;
   let selectedPresetIndex = DEFAULTS.selectedPreset;
@@ -101,7 +105,6 @@ export function initHealingControls({ state, settings, pointsManager }) {
 
   state.towers = [bowl];
   state.selectedTowerIndex = 0;
-  state.weaponActions = [() => {}];
   state.weaponIndex = 0;
   state.displayPen = false;
 
@@ -170,6 +173,18 @@ export function initHealingControls({ state, settings, pointsManager }) {
   const instrumentButtons = new Map();
   const formatFrequency = (value) =>
     Math.abs(value % 1) > 0.001 ? value.toFixed(2) : Math.round(value);
+  const emitSound = () => {
+    audio.triggerInstrument(activeInstrument, {
+      frequency,
+      decay,
+      binauralBeat,
+      reverbMix,
+      intentionSeed,
+    });
+    const label = INSTRUMENTS.find((item) => item.id === activeInstrument)?.label || activeInstrument;
+    setStatus(`${label} emitted.`);
+  };
+  state.weaponActions = [emitSound];
   const getInstrumentIndex = () => {
     const idx = INSTRUMENTS.findIndex((item) => item.id === activeInstrument);
     return idx >= 0 ? idx : 0;
@@ -262,10 +277,7 @@ export function initHealingControls({ state, settings, pointsManager }) {
       button.classList.toggle("weapon--active", id === activeInstrument);
     });
     const label = INSTRUMENTS.find((item) => item.id === instrumentId)?.label || instrumentId;
-    if (emitSub) {
-      emitSub.textContent = `${label} - ${formatFrequency(frequency)} Hz`;
-    }
-    setStatus(`${label} ready.`);
+    setStatus(`${label} ready. Choose a frequency below or tap the visual.`);
     syncInstrumentParams(instrumentParams?.[INSTRUMENT_PARAM.audioLevel] ?? 0);
   };
 
@@ -301,10 +313,6 @@ export function initHealingControls({ state, settings, pointsManager }) {
       ui.frequency.value = String(frequency);
     }
     updateFrequencyLabel(frequency);
-    if (emitSub) {
-      const label = INSTRUMENTS.find((item) => item.id === activeInstrument)?.label || activeInstrument;
-      emitSub.textContent = `${label} - ${formatFrequency(frequency)} Hz`;
-    }
     presetButtons.forEach((button, idx) => {
       button.classList.toggle("healing-preset--active", idx === selectedPresetIndex);
     });
@@ -317,10 +325,16 @@ export function initHealingControls({ state, settings, pointsManager }) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "healing-preset";
+      const iconSrc = PRESET_ICONS[preset.label];
       button.title = preset.desc;
       button.innerHTML = `
-        <span class="healing-preset__hz">${preset.hz} Hz</span>
-        <span class="healing-preset__label">${preset.label}</span>
+        <span class="healing-preset__icon" aria-hidden="true">
+          ${iconSrc ? `<img src="${iconSrc}" alt="" loading="lazy" />` : ""}
+        </span>
+        <span class="healing-preset__content">
+          <span class="healing-preset__hz">${formatFrequency(preset.hz)} Hz</span>
+          <span class="healing-preset__label">${preset.label}</span>
+        </span>
       `;
       button.addEventListener("click", () => setPresetIndex(index));
       presetButtons.push(button);
@@ -336,10 +350,6 @@ export function initHealingControls({ state, settings, pointsManager }) {
       frequency = Number(ui.frequency.value);
       bowl.frequency = frequency;
       updateFrequencyLabel(frequency);
-      if (emitSub) {
-        const label = INSTRUMENTS.find((item) => item.id === activeInstrument)?.label || activeInstrument;
-        emitSub.textContent = `${label} - ${formatFrequency(frequency)} Hz`;
-      }
       selectedPresetIndex = -1;
       presetButtons.forEach((button) => button.classList.remove("healing-preset--active"));
       syncInstrumentParams(instrumentParams?.[INSTRUMENT_PARAM.audioLevel] ?? 0);
@@ -429,20 +439,6 @@ export function initHealingControls({ state, settings, pointsManager }) {
     });
   }
 
-  if (ui.emitSound) {
-    ui.emitSound.addEventListener("click", () => {
-      audio.triggerInstrument(activeInstrument, {
-        frequency,
-        decay,
-        binauralBeat,
-        reverbMix,
-        intentionSeed,
-      });
-      const label = INSTRUMENTS.find((item) => item.id === activeInstrument)?.label || activeInstrument;
-      setStatus(`${label} emitted.`);
-    });
-  }
-
   if (ui.settingsToggle) {
     ui.settingsToggle.addEventListener("click", () => {
       document.body.classList.toggle("healing-show-settings");
@@ -473,6 +469,9 @@ export function initHealingControls({ state, settings, pointsManager }) {
     settings.drawOpacity = clamp(params[offset + 3], 0, 1);
     settings.fillOpacity = clamp(params[offset + 4], 0, 1);
     settings.dotSize = clamp(params[offset + 5], 0, 50);
+    renderBase.depositFactor = settings.depositFactor;
+    renderBase.drawOpacity = settings.drawOpacity ?? renderBase.drawOpacity;
+    renderBase.fillOpacity = settings.fillOpacity ?? renderBase.fillOpacity;
   };
 
   const applyPresetSelection = async () => {
@@ -517,18 +516,19 @@ export function initHealingControls({ state, settings, pointsManager }) {
   const animationLoop = () => {
     const level = audio.updateLevel();
     const mod = clamp(level * responseStrength, 0, 1.5);
-    bowl.strength = clamp(bowl.baseStrength * (0.6 + 2.1 * mod), 0, 1.8);
-    bowl.radius = clamp(
-      bowl.baseRadius * (0.85 + 0.55 * mod),
-      TOWER_SETTINGS.minRadius,
-      TOWER_SETTINGS.maxRadius
-    );
+    const activeLevel = mod > 0.02 ? mod : 0;
+    const visibility = clamp(activeLevel, 0, 1);
+    bowl.strength = clamp(bowl.baseStrength * activeLevel, 0, 1.8);
+    bowl.radius = bowl.baseRadius;
+    settings.depositFactor = renderBase.depositFactor * visibility;
+    settings.drawOpacity = renderBase.drawOpacity * visibility;
+    settings.fillOpacity = renderBase.fillOpacity * visibility;
     syncInstrumentParams(level);
     updateMeter(level);
     requestAnimationFrame(animationLoop);
   };
 
-  setStatus("Choose an instrument and emit.");
+  setStatus("Choose an instrument, then tap the visual to emit.");
   updateIntentionSeed(intentionText);
   syncInstrumentParams(0);
   animationLoop();
