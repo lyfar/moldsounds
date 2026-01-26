@@ -75,10 +75,146 @@ export function initHealingControls({ state, settings, pointsManager }) {
 
   const audio = createHealingAudio();
 
-  const renderBase = {
-    depositFactor: settings.depositFactor ?? 0.003,
-    drawOpacity: settings.drawOpacity ?? 1,
-    fillOpacity: settings.fillOpacity ?? 0,
+  let favoritePresetFiles = [];
+  let favoritePresetIndex = -1;
+  let favoritePresetLoad = null;
+  let favoritePresetRequestId = 0;
+
+  const applyFavoriteSettings = (settingsData) => {
+    if (!settingsData || typeof settingsData !== "object") {
+      return;
+    }
+    if (Number.isFinite(settingsData.penSize)) {
+      const min = Number.isFinite(settings.penSizeMin) ? settings.penSizeMin : 0.02;
+      const max = Number.isFinite(settings.penSizeMax) ? settings.penSizeMax : 0.85;
+      state.targetActionAreaSizeSigma = clamp(settingsData.penSize, min, max);
+      state.latestSigmaChangeTime = state.time;
+    }
+    if (Number.isFinite(settingsData.inertia)) {
+      state.L2Action = clamp(settingsData.inertia, 0, 1);
+    }
+    if (Number.isFinite(settingsData.flowX)) {
+      state.moveBiasActionX = clamp(settingsData.flowX, -1, 1);
+    }
+    if (Number.isFinite(settingsData.flowY)) {
+      state.moveBiasActionY = clamp(settingsData.flowY, -1, 1);
+    }
+    if (Number.isFinite(settingsData.colorMode)) {
+      const maxMode = Math.max(0, (settings.numberOfColorModes ?? 1) - 1);
+      state.colorModeType = clamp(Math.round(settingsData.colorMode), 0, maxMode);
+    }
+    if (typeof settingsData.primeFieldEnabled === "boolean") {
+      state.primeFieldEnabled = settingsData.primeFieldEnabled;
+    }
+    if (Number.isFinite(settingsData.primeFieldSpeed)) {
+      state.primeFieldSpeed = clamp(settingsData.primeFieldSpeed, 0, 1);
+    }
+    if (Number.isFinite(settingsData.primeFieldStrength)) {
+      state.primeFieldStrength = clamp(settingsData.primeFieldStrength, 0.1, 1.5);
+    }
+    if (Number.isFinite(settingsData.primeFieldSpread)) {
+      state.primeFieldSpread = clamp(settingsData.primeFieldSpread, 0.2, 0.7);
+    }
+    if (Number.isFinite(settingsData.depositFactor)) {
+      settings.depositFactor = clamp(settingsData.depositFactor, 0, 1);
+    }
+    if (Number.isFinite(settingsData.decayFactor)) {
+      settings.decayFactor = clamp(settingsData.decayFactor, 0, 1);
+    }
+    if (Number.isFinite(settingsData.blurPasses)) {
+      settings.blurPasses = Math.max(0, Math.round(settingsData.blurPasses));
+    }
+    if (Number.isFinite(settingsData.drawOpacity)) {
+      settings.drawOpacity = clamp(settingsData.drawOpacity, 0, 1);
+    }
+    if (Number.isFinite(settingsData.fillOpacity)) {
+      settings.fillOpacity = clamp(settingsData.fillOpacity, 0, 1);
+    }
+    if (Number.isFinite(settingsData.dotSize)) {
+      settings.dotSize = clamp(settingsData.dotSize, 0, 50);
+    }
+  };
+
+  const applyFavoriteSelection = (indices) => {
+    if (!Array.isArray(indices) || indices.length < 2) {
+      return false;
+    }
+    const limit = pointsManager.getNumberOfPoints() - 1;
+    const penIndex = clamp(Math.round(indices[0]), 0, limit);
+    const bgIndex = clamp(Math.round(indices[1]), 0, limit);
+    pointsManager.setSelectedIndex(0, penIndex);
+    pointsManager.setSelectedIndex(1, bgIndex);
+    return true;
+  };
+
+  const loadFavoritePresetFiles = async () => {
+    if (favoritePresetLoad) {
+      return favoritePresetLoad;
+    }
+    favoritePresetLoad = (async () => {
+      const response = await fetch("./physarum-favorites/index.json");
+      if (!response.ok) {
+        throw new Error(`Favorites index ${response.status}`);
+      }
+      const payload = await response.json();
+      const files = Array.isArray(payload?.presets)
+        ? payload.presets.map((entry) => entry?.file).filter(Boolean)
+        : [];
+      favoritePresetFiles = files;
+      return files;
+    })().catch((error) => {
+      console.warn(error);
+      favoritePresetFiles = [];
+      return [];
+    });
+    return favoritePresetLoad;
+  };
+
+  const pickRandomFavoriteFile = (files) => {
+    if (!files.length) {
+      return null;
+    }
+    if (files.length === 1) {
+      favoritePresetIndex = 0;
+      return files[0];
+    }
+    let nextIndex = Math.floor(Math.random() * files.length);
+    if (nextIndex === favoritePresetIndex) {
+      nextIndex = (nextIndex + 1) % files.length;
+    }
+    favoritePresetIndex = nextIndex;
+    return files[nextIndex];
+  };
+
+  const applyRandomFavoritePreset = async () => {
+    const requestId = (favoritePresetRequestId += 1);
+    const files = await loadFavoritePresetFiles();
+    if (requestId !== favoritePresetRequestId) {
+      return;
+    }
+    const file = pickRandomFavoriteFile(files);
+    if (!file) {
+      return;
+    }
+    const response = await fetch(`./physarum-favorites/${file}`);
+    if (!response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    if (Array.isArray(payload?.points)) {
+      pointsManager.loadPointsData(payload.points);
+    }
+    if (!applyFavoriteSelection(payload?.selectedIndices)) {
+      const penIndex = payload?.settings?.penIndex;
+      const bgIndex = payload?.settings?.bgIndex;
+      if (Number.isFinite(penIndex) && Number.isFinite(bgIndex)) {
+        applyFavoriteSelection([penIndex, bgIndex]);
+      }
+    }
+    if (payload?.settings) {
+      applyFavoriteSettings(payload.settings);
+    }
+    state.transitionTriggerTime = state.time;
   };
 
   let activeInstrument = DEFAULTS.activeInstrument;
@@ -301,7 +437,7 @@ export function initHealingControls({ state, settings, pointsManager }) {
   }
 
   const presetButtons = [];
-  const setPresetIndex = (index) => {
+  const setPresetIndex = (index, { applyFavorite = true } = {}) => {
     selectedPresetIndex = index;
     const preset = SACRED_FREQUENCIES[index];
     if (!preset) {
@@ -317,6 +453,9 @@ export function initHealingControls({ state, settings, pointsManager }) {
       button.classList.toggle("healing-preset--active", idx === selectedPresetIndex);
     });
     syncInstrumentParams(instrumentParams?.[INSTRUMENT_PARAM.audioLevel] ?? 0);
+    if (applyFavorite) {
+      void applyRandomFavoritePreset();
+    }
   };
 
   if (ui.frequencyPresets) {
@@ -340,7 +479,7 @@ export function initHealingControls({ state, settings, pointsManager }) {
       presetButtons.push(button);
       ui.frequencyPresets.appendChild(button);
     });
-    setPresetIndex(selectedPresetIndex);
+    setPresetIndex(selectedPresetIndex, { applyFavorite: false });
   }
 
   if (ui.frequency) {
@@ -353,6 +492,9 @@ export function initHealingControls({ state, settings, pointsManager }) {
       selectedPresetIndex = -1;
       presetButtons.forEach((button) => button.classList.remove("healing-preset--active"));
       syncInstrumentParams(instrumentParams?.[INSTRUMENT_PARAM.audioLevel] ?? 0);
+    });
+    ui.frequency.addEventListener("change", () => {
+      void applyRandomFavoritePreset();
     });
   }
 
@@ -469,9 +611,6 @@ export function initHealingControls({ state, settings, pointsManager }) {
     settings.drawOpacity = clamp(params[offset + 3], 0, 1);
     settings.fillOpacity = clamp(params[offset + 4], 0, 1);
     settings.dotSize = clamp(params[offset + 5], 0, 50);
-    renderBase.depositFactor = settings.depositFactor;
-    renderBase.drawOpacity = settings.drawOpacity ?? renderBase.drawOpacity;
-    renderBase.fillOpacity = settings.fillOpacity ?? renderBase.fillOpacity;
   };
 
   const applyPresetSelection = async () => {
@@ -517,12 +656,8 @@ export function initHealingControls({ state, settings, pointsManager }) {
     const level = audio.updateLevel();
     const mod = clamp(level * responseStrength, 0, 1.5);
     const activeLevel = mod > 0.02 ? mod : 0;
-    const visibility = clamp(activeLevel, 0, 1);
     bowl.strength = clamp(bowl.baseStrength * activeLevel, 0, 1.8);
     bowl.radius = bowl.baseRadius;
-    settings.depositFactor = renderBase.depositFactor * visibility;
-    settings.drawOpacity = renderBase.drawOpacity * visibility;
-    settings.fillOpacity = renderBase.fillOpacity * visibility;
     syncInstrumentParams(level);
     updateMeter(level);
     requestAnimationFrame(animationLoop);
@@ -532,4 +667,6 @@ export function initHealingControls({ state, settings, pointsManager }) {
   updateIntentionSeed(intentionText);
   syncInstrumentParams(0);
   animationLoop();
+
+  void loadFavoritePresetFiles();
 }
