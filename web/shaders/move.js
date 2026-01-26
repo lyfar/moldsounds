@@ -2,9 +2,11 @@ export const createMoveShader = ({
   maxNumberOfWaves,
   maxNumberOfRandomSpawn,
   particleWorkgroupSize,
+  instrumentParamCount,
 }) => `
 const MAX_NUMBER_OF_WAVES: u32 = ${maxNumberOfWaves}u;
 const MAX_NUMBER_OF_RANDOM_SPAWN: u32 = ${maxNumberOfRandomSpawn}u;
+const INSTRUMENT_PARAM_COUNT: u32 = ${instrumentParamCount}u;
 const PI: f32 = 3.141592;
 
 struct SimUniforms {
@@ -74,6 +76,7 @@ struct ExtraData {
   randomSpawnY: array<f32, ${maxNumberOfRandomSpawn}>,
   towerCount: f32,
   towers: array<SoundTower, 8>,
+  instrumentParams: array<f32, ${instrumentParamCount}>,
 };
 
 @group(0) @binding(0) var<uniform> sim: SimUniforms;
@@ -91,14 +94,24 @@ fn fmod2(x: vec2<f32>, y: vec2<f32>) -> vec2<f32> {
   return vec2<f32>(fmod(x.x, y.x), fmod(x.y, y.y));
 }
 
+// instrumentParams indices:
+// 0 instrumentId, 1 intentionSeed, 2 binauralBeat, 3 decay, 4 reverbMix, 5 audioLevel,
+// 6 mixChladni, 7 mixCymatics, 8 mixSpiral, 9 mixStanding, 10 radialMod, 11 angularMod
 // Calculate sound pattern at a position relative to a tower center
 fn calcSoundPattern(
   localX: f32, localY: f32, // Position relative to tower center (-0.5 to 0.5 in tower radius)
-  freq: f32, strength: f32, pattern: i32, time: f32, aspectRatio: f32
+  freq: f32, strength: f32, pattern: i32, time: f32, aspectRatio: f32,
+  instrumentId: i32, intentionSeed: f32, binauralBeat: f32, decay: f32, reverbMix: f32,
+  audioLevel: f32, mixChladni: f32, mixCymatics: f32, mixSpiral: f32, mixStanding: f32,
+  radialMod: f32, angularMod: f32
 ) -> f32 {
   let freqNorm = (freq - 20.0) / 1980.0;
-  let baseK = 3.0 + freqNorm * 12.0;
-  let timePhase = time * (0.5 + freqNorm * 2.0);
+  let binauralNorm = clamp(binauralBeat / 15.0, 0.0, 1.0);
+  let decayNorm = clamp(decay / 15.0, 0.0, 1.0);
+  let intention = clamp(intentionSeed, 0.6, 1.6);
+  let baseWarp = 0.9 + (intention - 1.0) * 0.4 + binauralNorm * 0.15;
+  let baseK = (3.0 + freqNorm * 12.0) * baseWarp;
+  let timePhase = time * (0.5 + freqNorm * 2.0) * (0.6 + decayNorm * 0.6) + binauralNorm * 2.0;
   
   // Apply aspect ratio correction to Y to maintain circular patterns on screen
   // On portrait screens (aspectRatio > 1), multiply localY by aspectRatio
@@ -136,24 +149,44 @@ fn calcSoundPattern(
   let st1 = sin(k1 * cx + timePhase * 0.3) * sin(k1 * cy - timePhase * 0.3);
   let st2 = sin(k2 * (cx + cy) * 0.707) * sin(k2 * (cx - cy) * 0.707 + timePhase * 0.2);
   let standing = (st1 + st2 * 0.5) * 0.67;
-  
-  // Select pattern
+
+  var basePattern = 0.0;
   if (pattern == 0) {
-    return chladni * strength;
+    basePattern = chladni;
   } else if (pattern == 1) {
-    return cymatics * 1.5 * strength;
+    basePattern = cymatics * 1.5;
   } else if (pattern == 2) {
-    return spiral * 1.2 * strength;
+    basePattern = spiral * 1.2;
   } else if (pattern == 3) {
-    return standing * 1.3 * strength;
+    basePattern = standing * 1.3;
   } else {
     // Auto blend
     let low = max(0.0, 1.0 - freqNorm * 3.0);
     let mid = max(0.0, 1.0 - abs(freqNorm - 0.5) * 3.0);
     let high = max(0.0, (freqNorm - 0.5) * 2.0);
     let total = low + mid + high + 0.001;
-    return (chladni * low + cymatics * mid * 1.5 + spiral * high + standing * 0.3) / total * strength;
+    basePattern = (chladni * low + cymatics * mid * 1.5 + spiral * high + standing * 0.3) / total;
   }
+
+  let mixSum = mixChladni + mixCymatics + mixSpiral + mixStanding;
+  if (mixSum < 0.001) {
+    return basePattern * strength;
+  }
+
+  let blended = (chladni * mixChladni + cymatics * 1.5 * mixCymatics + spiral * 1.2 * mixSpiral + standing * 1.3 * mixStanding) / mixSum;
+  let useAutoBlend = pattern == 4;
+  let corePattern = select(basePattern, blended, useAutoBlend);
+  let radialScale = 2.5 + radialMod * 6.0 + freqNorm * 2.0;
+  let angularScale = 2.0 + angularMod * 6.0;
+  let ringPhase = radialScale * r * PI + timePhase * (0.6 + decayNorm);
+  let anglePhase = angularScale * theta + timePhase * (0.4 + binauralNorm);
+  let envelope = exp(-r * (1.4 - reverbMix * 0.6));
+  var signature = sin(ringPhase + anglePhase) * envelope;
+  signature += 0.35 * cos(ringPhase * (0.7 + intention * 0.3) - anglePhase);
+  let signatureWeight = (0.35 + 0.65 * audioLevel) * clamp(mixSum * 0.35, 0.0, 1.0);
+  let presence = select(0.0, 1.0, instrumentId >= 0);
+  let combined = corePattern + signature * signatureWeight * presence;
+  return combined * strength;
 }
 
 fn random3(st: vec3<f32>) -> f32 {
@@ -333,6 +366,18 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
   var soundFieldStrength = 0.0;
   let aspectRatio = height / width;
   let towerCount = i32(extras.towerCount + 0.5);
+  let instrumentId = i32(floor(extras.instrumentParams[0] + 0.5));
+  let intentionSeed = extras.instrumentParams[1];
+  let binauralBeat = extras.instrumentParams[2];
+  let decay = extras.instrumentParams[3];
+  let reverbMix = clamp(extras.instrumentParams[4], 0.0, 1.0);
+  let audioLevel = clamp(extras.instrumentParams[5], 0.0, 1.0);
+  let mixChladni = max(0.0, extras.instrumentParams[6]);
+  let mixCymatics = max(0.0, extras.instrumentParams[7]);
+  let mixSpiral = max(0.0, extras.instrumentParams[8]);
+  let mixStanding = max(0.0, extras.instrumentParams[9]);
+  let radialMod = max(0.0, extras.instrumentParams[10]);
+  let angularMod = max(0.0, extras.instrumentParams[11]);
   
   // Check if we have towers or use global sound
   let hasTowers = towerCount > 0;
@@ -376,9 +421,21 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
           let localY = dy / radiusNorm;
           
           let pattern = i32(tower.pattern + 0.5);
-          let p = calcSoundPattern(localX, localY, tower.frequency, tower.strength, pattern, sim.time, aspectRatio);
-          let pDx = calcSoundPattern(localX + e, localY, tower.frequency, tower.strength, pattern, sim.time, aspectRatio);
-          let pDy = calcSoundPattern(localX, localY + e, tower.frequency, tower.strength, pattern, sim.time, aspectRatio);
+          let p = calcSoundPattern(
+            localX, localY, tower.frequency, tower.strength, pattern, sim.time, aspectRatio,
+            instrumentId, intentionSeed, binauralBeat, decay, reverbMix, audioLevel,
+            mixChladni, mixCymatics, mixSpiral, mixStanding, radialMod, angularMod
+          );
+          let pDx = calcSoundPattern(
+            localX + e, localY, tower.frequency, tower.strength, pattern, sim.time, aspectRatio,
+            instrumentId, intentionSeed, binauralBeat, decay, reverbMix, audioLevel,
+            mixChladni, mixCymatics, mixSpiral, mixStanding, radialMod, angularMod
+          );
+          let pDy = calcSoundPattern(
+            localX, localY + e, tower.frequency, tower.strength, pattern, sim.time, aspectRatio,
+            instrumentId, intentionSeed, binauralBeat, decay, reverbMix, audioLevel,
+            mixChladni, mixCymatics, mixSpiral, mixStanding, radialMod, angularMod
+          );
           
           totalPattern += p * falloff;
           totalPatternDx += pDx * falloff;
@@ -391,9 +448,21 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
       let localY = normalizedPosition.y - 0.5;
       let pattern = i32(sim.soundWaveMode + 0.5);
       
-      totalPattern = calcSoundPattern(localX, localY, sim.soundFrequency, sim.soundStrength, pattern, sim.time, aspectRatio);
-      totalPatternDx = calcSoundPattern(localX + e, localY, sim.soundFrequency, sim.soundStrength, pattern, sim.time, aspectRatio);
-      totalPatternDy = calcSoundPattern(localX, localY + e, sim.soundFrequency, sim.soundStrength, pattern, sim.time, aspectRatio);
+      totalPattern = calcSoundPattern(
+        localX, localY, sim.soundFrequency, sim.soundStrength, pattern, sim.time, aspectRatio,
+        instrumentId, intentionSeed, binauralBeat, decay, reverbMix, audioLevel,
+        mixChladni, mixCymatics, mixSpiral, mixStanding, radialMod, angularMod
+      );
+      totalPatternDx = calcSoundPattern(
+        localX + e, localY, sim.soundFrequency, sim.soundStrength, pattern, sim.time, aspectRatio,
+        instrumentId, intentionSeed, binauralBeat, decay, reverbMix, audioLevel,
+        mixChladni, mixCymatics, mixSpiral, mixStanding, radialMod, angularMod
+      );
+      totalPatternDy = calcSoundPattern(
+        localX, localY + e, sim.soundFrequency, sim.soundStrength, pattern, sim.time, aspectRatio,
+        instrumentId, intentionSeed, binauralBeat, decay, reverbMix, audioLevel,
+        mixChladni, mixCymatics, mixSpiral, mixStanding, radialMod, angularMod
+      );
     }
     
     soundFieldStrength = totalPattern;

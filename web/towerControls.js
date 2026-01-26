@@ -157,6 +157,17 @@ export function initTowerControls(state) {
     updateSimpleTowerButton();
   };
 
+  const scheduleTowerUiRefresh = () => {
+    if (state.towerUiRaf) {
+      return;
+    }
+    state.towerUiRaf = requestAnimationFrame(() => {
+      state.towerUiRaf = null;
+      updateTowerUI();
+    });
+  };
+  state.refreshTowerUI = scheduleTowerUiRefresh;
+
   audioControls = initTowerAudioControls({
     state,
     ui: {

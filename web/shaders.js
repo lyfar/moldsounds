@@ -1,3 +1,4 @@
+import { INSTRUMENT_PARAM_COUNT } from "./config.js";
 import { createSetterShader } from "./shaders/setter.js";
 import { createMoveShader } from "./shaders/move.js";
 import { createDepositShader } from "./shaders/deposit.js";
@@ -23,6 +24,10 @@ export function createShaders(settings) {
     particleWorkgroupSize,
     maxNumberOfWaves: settings.maxNumberOfWaves,
     maxNumberOfRandomSpawn: settings.maxNumberOfRandomSpawn,
+    instrumentParamCount:
+      Number.isFinite(settings.instrumentParamCount) && settings.instrumentParamCount > 0
+        ? settings.instrumentParamCount
+        : INSTRUMENT_PARAM_COUNT,
   };
 
   const setter = createSetterShader(shared);

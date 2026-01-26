@@ -1,4 +1,4 @@
-import { PARAMS_DIMENSION } from "../config.js";
+import { PARAMS_DIMENSION, INSTRUMENT_PARAM_COUNT } from "../config.js";
 import { createParticlesBuffer, writeZeroTexture } from "../utils.js";
 
 export function createGpuResources({
@@ -37,7 +37,9 @@ export function createGpuResources({
   const waveCount = settings.maxNumberOfWaves;
   const spawnCount = settings.maxNumberOfRandomSpawn;
   const maxTowers = 8;
-  const extraData = new Float32Array(waveCount * 4 + spawnCount * 2 + maxTowers * 6 + 1);
+  const extraData = new Float32Array(
+    waveCount * 4 + spawnCount * 2 + maxTowers * 6 + 1 + INSTRUMENT_PARAM_COUNT
+  );
   const extraOffsets = {
     waveX: 0,
     waveY: waveCount,
@@ -47,6 +49,7 @@ export function createGpuResources({
     spawnY: waveCount * 4 + spawnCount,
     towerCount: waveCount * 4 + spawnCount * 2,
     towerData: waveCount * 4 + spawnCount * 2 + 1,
+    instrumentParams: waveCount * 4 + spawnCount * 2 + maxTowers * 6 + 1,
   };
   const extraBuffer = device.createBuffer({
     size: extraData.byteLength,

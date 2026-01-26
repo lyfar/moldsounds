@@ -127,6 +127,21 @@ export const POINT_LABELS = [
 export const SELECTED_POINTS = [0, 5, 2, 15, 3, 4, 6, 1, 7, 8, 9, 10, 11, 12, 14, 16, 13, 17, 18, 19, 20, 21];
 
 export const PARAMS_DIMENSION = 15;
+export const INSTRUMENT_PARAM_COUNT = 12;
+export const INSTRUMENT_PARAM = {
+  instrumentId: 0,
+  intentionSeed: 1,
+  binauralBeat: 2,
+  decay: 3,
+  reverbMix: 4,
+  audioLevel: 5,
+  mixChladni: 6,
+  mixCymatics: 7,
+  mixSpiral: 8,
+  mixStanding: 9,
+  radialMod: 10,
+  angularMod: 11,
+};
 
 export const COLOR_MODES = [
   { id: 0, label: "Mono" },

@@ -1,0 +1,322 @@
+.healing-view .settings-panel {
+  right: 20px;
+  top: 20px;
+  width: min(320px, 36vw);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  z-index: 110;
+}
+
+.healing-view .settings-panel textarea {
+  width: 100%;
+  min-height: 80px;
+  background: rgba(12, 16, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  color: var(--ink);
+  padding: 10px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  resize: vertical;
+}
+
+.healing-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.healing-preset {
+  border: 1px solid transparent;
+  background: rgba(12, 16, 18, 0.6);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.healing-preset:hover {
+  border-color: rgba(112, 197, 181, 0.4);
+  background: rgba(12, 16, 18, 0.8);
+}
+
+.healing-preset--active {
+  border-color: rgba(228, 166, 90, 0.6);
+  background: rgba(228, 166, 90, 0.12);
+}
+
+.healing-preset__hz {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.healing-preset__label {
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.healing-tools {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+}
+
+.healing-tools .weapons-panel__list {
+  grid-template-columns: repeat(6, minmax(64px, 1fr));
+}
+
+.healing-weapon {
+  min-width: 68px;
+  gap: 4px;
+}
+
+.healing-weapon .weapon__preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100%;
+}
+
+.healing-weapon .weapon__label {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.healing-weapon .weapon__key {
+  display: none;
+}
+
+.healing-weapon--bowl .weapon__preview {
+  background-image: url("../assets/healing/icons/bowl.png");
+}
+
+.healing-weapon--gong .weapon__preview {
+  background-image: url("../assets/healing/icons/gong.png");
+}
+
+.healing-weapon--wood .weapon__preview {
+  background-image: url("../assets/healing/icons/wood.png");
+}
+
+.healing-weapon--crystal .weapon__preview {
+  background-image: url("../assets/healing/icons/crystal.png");
+}
+
+.healing-weapon--drum .weapon__preview {
+  background-image: url("../assets/healing/icons/drum.png");
+}
+
+.healing-weapon--chime .weapon__preview {
+  background-image: url("../assets/healing/icons/chime.png");
+}
+
+.healing-dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: rgba(12, 16, 18, 0.85);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(10px);
+  z-index: 121;
+  pointer-events: auto;
+  touch-action: auto;
+  width: min(520px, 92vw);
+}
+
+.healing-emit {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: radial-gradient(circle at 50% 30%, rgba(112, 197, 181, 0.25), rgba(12, 16, 18, 0.9));
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.healing-emit:hover {
+  border-color: rgba(228, 166, 90, 0.5);
+  transform: translateY(-1px);
+}
+
+.healing-emit__label {
+  font-size: 0.8rem;
+}
+
+.healing-emit__sub {
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.healing-dock__status {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.healing-status {
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.healing-meter {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.healing-meter span {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(112, 197, 181, 0.8), rgba(228, 166, 90, 0.85));
+  transition: width 0.12s ease;
+}
+
+.healing-settings-toggle {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(12, 16, 18, 0.9);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.healing-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.healing-button {
+  border: 1px solid var(--panel-border);
+  background: rgba(12, 16, 18, 0.85);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.healing-button:hover {
+  border-color: rgba(112, 197, 181, 0.5);
+  background: rgba(18, 24, 26, 0.9);
+  transform: translateY(-1px);
+}
+
+.healing-info {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(12, 16, 18, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 900px), (max-height: 700px) {
+  .healing-view .settings-panel {
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 160px);
+    width: min(92vw, 360px);
+    max-height: 52vh;
+    transform: translate(-50%, 120%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  body.healing-show-settings .settings-panel {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .healing-tools {
+    width: min(96vw, 520px);
+    max-width: calc(100vw - 16px);
+  }
+
+  .healing-tools .weapons-panel__list {
+    grid-template-columns: repeat(6, minmax(48px, 1fr));
+    gap: 6px;
+  }
+
+  .healing-weapon {
+    min-width: 56px;
+  }
+
+  .healing-weapon .weapon__preview {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .healing-dock {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .healing-emit__sub {
+    display: none;
+  }
+
+  .healing-settings-toggle {
+    display: inline-flex;
+    font-size: 0.6rem;
+    padding: 8px 10px;
+  }
+}
+
+@keyframes healing-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

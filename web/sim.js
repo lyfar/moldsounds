@@ -1,5 +1,5 @@
 import { initWebGPU, configureCanvas } from "./gpu.js";
-import { PARAMS_DIMENSION, SOUND_WAVE_MODES } from "./config.js";
+import { PARAMS_DIMENSION, SOUND_WAVE_MODES, INSTRUMENT_PARAM_COUNT } from "./config.js";
 import {
   buildUniforms,
   writePointSettings,
@@ -118,7 +118,12 @@ export async function startSimulation({
     1,
     Math.min(settings.particleWorkgroupSize, particleWorkgroupLimit)
   );
-  const gpuSettings = { ...settings, gridWorkgroupSize, particleWorkgroupSize };
+  const gpuSettings = {
+    ...settings,
+    gridWorkgroupSize,
+    particleWorkgroupSize,
+    instrumentParamCount: INSTRUMENT_PARAM_COUNT,
+  };
   if (
     gridWorkgroupSize !== settings.gridWorkgroupSize ||
     particleWorkgroupSize !== settings.particleWorkgroupSize
@@ -196,6 +201,11 @@ export async function startSimulation({
     weaponIndex: 0,
     weaponActions: [],
     canvas,
+    instrumentParams: (() => {
+      const params = new Float32Array(INSTRUMENT_PARAM_COUNT);
+      params[0] = -1;
+      return params;
+    })(),
     debug: {
       enabled: debugDefaultEnabled,
       pending: false,
@@ -396,6 +406,17 @@ export async function startSimulation({
         extraData[baseIdx + 3] = 0;
         extraData[baseIdx + 4] = 0;
         extraData[baseIdx + 5] = 0;
+      }
+    }
+    const instrumentParams = state.instrumentParams;
+    const instrumentOffset = extraOffsets.instrumentParams;
+    if (instrumentParams && instrumentParams.length >= INSTRUMENT_PARAM_COUNT) {
+      for (let i = 0; i < INSTRUMENT_PARAM_COUNT; i += 1) {
+        extraData[instrumentOffset + i] = instrumentParams[i];
+      }
+    } else {
+      for (let i = 0; i < INSTRUMENT_PARAM_COUNT; i += 1) {
+        extraData[instrumentOffset + i] = 0;
       }
     }
     device.queue.writeBuffer(extraBuffer, 0, extraData);

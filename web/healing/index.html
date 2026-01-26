@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+    <base href="../" />
+    <title>Sound Healing Bowl</title>
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./styles/healing.css" />
+  </head>
+  <body class="healing-view view-expert">
+    <div id="app">
+      <canvas id="gfx" aria-label="Sound Healing Bowl"></canvas>
+      <div id="pen-indicator" aria-hidden="true"></div>
+
+      <aside class="settings-panel healing-settings" aria-label="Healing settings">
+        <details class="settings-section settings-section--core" open>
+          <summary>Intention</summary>
+          <div class="settings-content">
+            <div class="control-group">
+              <div class="control-group__label">Core</div>
+              <div class="control">
+                <label for="intentionText">Program your reality</label>
+                <textarea
+                  id="intentionText"
+                  rows="3"
+                  placeholder="Enter intention (e.g., Wealth, Health, 777)..."
+                ></textarea>
+              </div>
+              <div class="control control--info">
+                Seed <span id="intentionSeed">1.000000</span>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section settings-section--flow">
+          <summary>Frequencies</summary>
+          <div class="settings-content">
+            <div class="control-group">
+              <div class="control-group__label">Solfeggio & Planetary</div>
+              <div class="control">
+                <div id="frequencyPresets" class="healing-presets"></div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section settings-section--render">
+          <summary>Audio Core</summary>
+          <div class="settings-content">
+            <div class="control-group">
+              <div class="control-group__label">Audio</div>
+              <div class="control">
+                <label for="frequency">Tone <span id="frequencyValue">528 Hz</span></label>
+                <input id="frequency" type="range" min="120" max="1200" step="0.01" value="528" />
+              </div>
+              <div class="control">
+                <label for="decay">Golden Decay <span id="decayValue">6.5s</span></label>
+                <input id="decay" type="range" min="1" max="15" step="0.1" value="6.5" />
+              </div>
+              <div class="control">
+                <label for="binauralBeat">Schumann / Wind <span id="binauralBeatValue">7.83 Hz</span></label>
+                <input id="binauralBeat" type="range" min="0.1" max="15" step="0.1" value="7.83" />
+              </div>
+              <div class="control">
+                <label for="reverbMix">Reverb Mix <span id="reverbMixValue">0.618</span></label>
+                <input id="reverbMix" type="range" min="0" max="1" step="0.001" value="0.618" />
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section settings-section--tuning">
+          <summary>Visual Field</summary>
+          <div class="settings-content">
+            <div class="control-group">
+              <div class="control-group__label">Bowl</div>
+              <div class="control">
+                <label for="bowlSize">Bowl Size <span id="bowlSizeValue">0.32</span></label>
+                <input id="bowlSize" type="range" min="0.08" max="0.5" step="0.01" value="0.32" />
+              </div>
+              <div class="control">
+                <label for="bowlStrength">Energy <span id="bowlStrengthValue">0.55</span></label>
+                <input id="bowlStrength" type="range" min="0.05" max="1" step="0.01" value="0.55" />
+              </div>
+              <div class="control">
+                <label for="bowlResponse">Response <span id="bowlResponseValue">1.40</span></label>
+                <input id="bowlResponse" type="range" min="0.6" max="2.4" step="0.01" value="1.4" />
+              </div>
+              <div class="control">
+                <label for="bowlPattern">Pattern</label>
+                <select id="bowlPattern"></select>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-section settings-section--presets">
+          <summary>Presets</summary>
+          <div class="settings-content">
+            <div class="control-group">
+              <div class="control-group__label">Library</div>
+              <div class="control">
+                <label for="presetLibrary">Preset</label>
+                <select id="presetLibrary"></select>
+              </div>
+              <div class="control">
+                <label for="presetApplyTarget">Apply to</label>
+                <select id="presetApplyTarget">
+                  <option value="2">Both</option>
+                  <option value="0">Pen</option>
+                  <option value="1">Background</option>
+                </select>
+              </div>
+              <div class="healing-actions">
+                <button id="applyPresetBtn" class="healing-button" type="button">Apply preset</button>
+              </div>
+              <div id="presetInfo" class="healing-info">Preset library ready.</div>
+            </div>
+          </div>
+        </details>
+      </aside>
+
+      <div class="healing-dock" aria-label="Healing quick controls">
+        <button id="emitSound" class="healing-emit" type="button">
+          <span class="healing-emit__label">Emit</span>
+          <span class="healing-emit__sub">Tap to play</span>
+        </button>
+        <div class="healing-dock__status">
+          <div id="healingStatus" class="healing-status">Choose an instrument and emit.</div>
+          <div class="healing-meter" aria-hidden="true">
+            <span id="healingMeter"></span>
+          </div>
+        </div>
+        <button id="healingSettingsToggle" class="healing-settings-toggle" type="button">Settings</button>
+      </div>
+
+      <div class="weapons-panel healing-tools" aria-label="Instruments">
+        <div id="instrumentGrid" class="weapons-panel__list" role="group" aria-label="Instruments"></div>
+      </div>
+
+      <div id="status" class="status status--hidden" role="status" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="./healing.js"></script>
+  </body>
+</html>
