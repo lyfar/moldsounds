@@ -3,6 +3,8 @@ import { clamp } from "./utils.js";
 import { applyPresetPayload } from "./presets/payload.js";
 import { loadPresetLibrary, updatePresetInfo } from "./presets/library.js";
 import { createHealingAudio } from "./healing/audioEngine.js";
+import { createFavoritePresetManager } from "./healing/favoritePresets.js";
+import { createInstrumentImpulse } from "./healing/instrumentImpulse.js";
 import { PRESET_ICONS } from "./healing/presetIcons.js";
 import {
   SACRED_FREQUENCIES,
@@ -14,8 +16,8 @@ import {
 
 const DEFAULTS = {
   activeInstrument: "bowl",
-  selectedPreset: 4,
-  frequency: 528,
+  selectedPreset: 0,
+  frequency: 174,
   decay: 12.7,
   binauralBeat: 12.9,
   reverbMix: 0.94,
@@ -74,148 +76,7 @@ export function initHealingControls({ state, settings, pointsManager }) {
   };
 
   const audio = createHealingAudio();
-
-  let favoritePresetFiles = [];
-  let favoritePresetIndex = -1;
-  let favoritePresetLoad = null;
-  let favoritePresetRequestId = 0;
-
-  const applyFavoriteSettings = (settingsData) => {
-    if (!settingsData || typeof settingsData !== "object") {
-      return;
-    }
-    if (Number.isFinite(settingsData.penSize)) {
-      const min = Number.isFinite(settings.penSizeMin) ? settings.penSizeMin : 0.02;
-      const max = Number.isFinite(settings.penSizeMax) ? settings.penSizeMax : 0.85;
-      state.targetActionAreaSizeSigma = clamp(settingsData.penSize, min, max);
-      state.latestSigmaChangeTime = state.time;
-    }
-    if (Number.isFinite(settingsData.inertia)) {
-      state.L2Action = clamp(settingsData.inertia, 0, 1);
-    }
-    if (Number.isFinite(settingsData.flowX)) {
-      state.moveBiasActionX = clamp(settingsData.flowX, -1, 1);
-    }
-    if (Number.isFinite(settingsData.flowY)) {
-      state.moveBiasActionY = clamp(settingsData.flowY, -1, 1);
-    }
-    if (Number.isFinite(settingsData.colorMode)) {
-      const maxMode = Math.max(0, (settings.numberOfColorModes ?? 1) - 1);
-      state.colorModeType = clamp(Math.round(settingsData.colorMode), 0, maxMode);
-    }
-    if (typeof settingsData.primeFieldEnabled === "boolean") {
-      state.primeFieldEnabled = settingsData.primeFieldEnabled;
-    }
-    if (Number.isFinite(settingsData.primeFieldSpeed)) {
-      state.primeFieldSpeed = clamp(settingsData.primeFieldSpeed, 0, 1);
-    }
-    if (Number.isFinite(settingsData.primeFieldStrength)) {
-      state.primeFieldStrength = clamp(settingsData.primeFieldStrength, 0.1, 1.5);
-    }
-    if (Number.isFinite(settingsData.primeFieldSpread)) {
-      state.primeFieldSpread = clamp(settingsData.primeFieldSpread, 0.2, 0.7);
-    }
-    if (Number.isFinite(settingsData.depositFactor)) {
-      settings.depositFactor = clamp(settingsData.depositFactor, 0, 1);
-    }
-    if (Number.isFinite(settingsData.decayFactor)) {
-      settings.decayFactor = clamp(settingsData.decayFactor, 0, 1);
-    }
-    if (Number.isFinite(settingsData.blurPasses)) {
-      settings.blurPasses = Math.max(0, Math.round(settingsData.blurPasses));
-    }
-    if (Number.isFinite(settingsData.drawOpacity)) {
-      settings.drawOpacity = clamp(settingsData.drawOpacity, 0, 1);
-    }
-    if (Number.isFinite(settingsData.fillOpacity)) {
-      settings.fillOpacity = clamp(settingsData.fillOpacity, 0, 1);
-    }
-    if (Number.isFinite(settingsData.dotSize)) {
-      settings.dotSize = clamp(settingsData.dotSize, 0, 50);
-    }
-  };
-
-  const applyFavoriteSelection = (indices) => {
-    if (!Array.isArray(indices) || indices.length < 2) {
-      return false;
-    }
-    const limit = pointsManager.getNumberOfPoints() - 1;
-    const penIndex = clamp(Math.round(indices[0]), 0, limit);
-    const bgIndex = clamp(Math.round(indices[1]), 0, limit);
-    pointsManager.setSelectedIndex(0, penIndex);
-    pointsManager.setSelectedIndex(1, bgIndex);
-    return true;
-  };
-
-  const loadFavoritePresetFiles = async () => {
-    if (favoritePresetLoad) {
-      return favoritePresetLoad;
-    }
-    favoritePresetLoad = (async () => {
-      const response = await fetch("./physarum-favorites/index.json");
-      if (!response.ok) {
-        throw new Error(`Favorites index ${response.status}`);
-      }
-      const payload = await response.json();
-      const files = Array.isArray(payload?.presets)
-        ? payload.presets.map((entry) => entry?.file).filter(Boolean)
-        : [];
-      favoritePresetFiles = files;
-      return files;
-    })().catch((error) => {
-      console.warn(error);
-      favoritePresetFiles = [];
-      return [];
-    });
-    return favoritePresetLoad;
-  };
-
-  const pickRandomFavoriteFile = (files) => {
-    if (!files.length) {
-      return null;
-    }
-    if (files.length === 1) {
-      favoritePresetIndex = 0;
-      return files[0];
-    }
-    let nextIndex = Math.floor(Math.random() * files.length);
-    if (nextIndex === favoritePresetIndex) {
-      nextIndex = (nextIndex + 1) % files.length;
-    }
-    favoritePresetIndex = nextIndex;
-    return files[nextIndex];
-  };
-
-  const applyRandomFavoritePreset = async () => {
-    const requestId = (favoritePresetRequestId += 1);
-    const files = await loadFavoritePresetFiles();
-    if (requestId !== favoritePresetRequestId) {
-      return;
-    }
-    const file = pickRandomFavoriteFile(files);
-    if (!file) {
-      return;
-    }
-    const response = await fetch(`./physarum-favorites/${file}`);
-    if (!response.ok) {
-      return;
-    }
-    const payload = await response.json();
-    if (Array.isArray(payload?.points)) {
-      pointsManager.loadPointsData(payload.points);
-    }
-    if (!applyFavoriteSelection(payload?.selectedIndices)) {
-      const penIndex = payload?.settings?.penIndex;
-      const bgIndex = payload?.settings?.bgIndex;
-      if (Number.isFinite(penIndex) && Number.isFinite(bgIndex)) {
-        applyFavoriteSelection([penIndex, bgIndex]);
-      }
-    }
-    if (payload?.settings) {
-      applyFavoriteSettings(payload.settings);
-    }
-    state.transitionTriggerTime = state.time;
-  };
+  const favorites = createFavoritePresetManager({ state, settings, pointsManager });
 
   let activeInstrument = DEFAULTS.activeInstrument;
   let selectedPresetIndex = DEFAULTS.selectedPreset;
@@ -309,18 +170,22 @@ export function initHealingControls({ state, settings, pointsManager }) {
   const instrumentButtons = new Map();
   const formatFrequency = (value) =>
     Math.abs(value % 1) > 0.001 ? value.toFixed(2) : Math.round(value);
-  const emitSound = () => {
-    audio.triggerInstrument(activeInstrument, {
+  const instrumentImpulse = createInstrumentImpulse({
+    audio,
+    getActiveInstrument: () => activeInstrument,
+    getInstrumentParams: () => ({
       frequency,
       decay,
       binauralBeat,
       reverbMix,
       intentionSeed,
-    });
-    const label = INSTRUMENTS.find((item) => item.id === activeInstrument)?.label || activeInstrument;
-    setStatus(`${label} emitted.`);
-  };
-  state.weaponActions = [emitSound];
+    }),
+    setStatus,
+    getInstrumentLabel: (instrumentId) =>
+      INSTRUMENTS.find((item) => item.id === instrumentId)?.label || instrumentId,
+    canvas: document.getElementById("gfx"),
+  });
+  state.weaponActions = [instrumentImpulse.emitSound];
   const getInstrumentIndex = () => {
     const idx = INSTRUMENTS.findIndex((item) => item.id === activeInstrument);
     return idx >= 0 ? idx : 0;
@@ -394,24 +259,26 @@ export function initHealingControls({ state, settings, pointsManager }) {
       return;
     }
     const mix = buildInstrumentMix();
+    const impactMix = instrumentImpulse.applyImpactToMix(mix);
     instrumentParams[INSTRUMENT_PARAM.instrumentId] = getInstrumentIndex();
     instrumentParams[INSTRUMENT_PARAM.intentionSeed] = intentionSeed;
     instrumentParams[INSTRUMENT_PARAM.binauralBeat] = binauralBeat;
     instrumentParams[INSTRUMENT_PARAM.decay] = decay;
     instrumentParams[INSTRUMENT_PARAM.reverbMix] = reverbMix;
     instrumentParams[INSTRUMENT_PARAM.audioLevel] = audioLevel;
-    instrumentParams[INSTRUMENT_PARAM.mixChladni] = mix.mixChladni;
-    instrumentParams[INSTRUMENT_PARAM.mixCymatics] = mix.mixCymatics;
-    instrumentParams[INSTRUMENT_PARAM.mixSpiral] = mix.mixSpiral;
-    instrumentParams[INSTRUMENT_PARAM.mixStanding] = mix.mixStanding;
-    instrumentParams[INSTRUMENT_PARAM.radialMod] = mix.radialMod;
-    instrumentParams[INSTRUMENT_PARAM.angularMod] = mix.angularMod;
+    instrumentParams[INSTRUMENT_PARAM.mixChladni] = impactMix.mixChladni;
+    instrumentParams[INSTRUMENT_PARAM.mixCymatics] = impactMix.mixCymatics;
+    instrumentParams[INSTRUMENT_PARAM.mixSpiral] = impactMix.mixSpiral;
+    instrumentParams[INSTRUMENT_PARAM.mixStanding] = impactMix.mixStanding;
+    instrumentParams[INSTRUMENT_PARAM.radialMod] = impactMix.radialMod;
+    instrumentParams[INSTRUMENT_PARAM.angularMod] = impactMix.angularMod;
   };
   const setActiveInstrument = (instrumentId) => {
     activeInstrument = instrumentId;
     instrumentButtons.forEach((button, id) => {
       button.classList.toggle("weapon--active", id === activeInstrument);
     });
+    instrumentImpulse.handleInstrumentChange(activeInstrument);
     const label = INSTRUMENTS.find((item) => item.id === instrumentId)?.label || instrumentId;
     setStatus(`${label} ready. Choose a frequency below or tap the visual.`);
     syncInstrumentParams(instrumentParams?.[INSTRUMENT_PARAM.audioLevel] ?? 0);
@@ -454,7 +321,7 @@ export function initHealingControls({ state, settings, pointsManager }) {
     });
     syncInstrumentParams(instrumentParams?.[INSTRUMENT_PARAM.audioLevel] ?? 0);
     if (applyFavorite) {
-      void applyRandomFavoritePreset();
+      void favorites.applyRandomFavoritePreset();
     }
   };
 
@@ -494,7 +361,7 @@ export function initHealingControls({ state, settings, pointsManager }) {
       syncInstrumentParams(instrumentParams?.[INSTRUMENT_PARAM.audioLevel] ?? 0);
     });
     ui.frequency.addEventListener("change", () => {
-      void applyRandomFavoritePreset();
+      void favorites.applyRandomFavoritePreset();
     });
   }
 
@@ -656,8 +523,9 @@ export function initHealingControls({ state, settings, pointsManager }) {
     const level = audio.updateLevel();
     const mod = clamp(level * responseStrength, 0, 1.5);
     const activeLevel = mod > 0.02 ? mod : 0;
-    bowl.strength = clamp(bowl.baseStrength * activeLevel, 0, 1.8);
-    bowl.radius = bowl.baseRadius;
+    const { strengthScale, radiusScale } = instrumentImpulse.update(state.time);
+    bowl.strength = clamp(bowl.baseStrength * activeLevel * strengthScale, 0, 1.8);
+    bowl.radius = instrumentImpulse.applyRadius(bowl.baseRadius, radiusScale);
     syncInstrumentParams(level);
     updateMeter(level);
     requestAnimationFrame(animationLoop);
@@ -668,5 +536,5 @@ export function initHealingControls({ state, settings, pointsManager }) {
   syncInstrumentParams(0);
   animationLoop();
 
-  void loadFavoritePresetFiles();
+  void favorites.loadFavoritePresetFiles();
 }

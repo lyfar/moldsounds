@@ -1,23 +1,84 @@
+.healing-view {
+  --ink: #f2f2f2;
+  --muted: #b0b0b0;
+  --panel: rgba(0, 0, 0, 0.72);
+  --panel-border: rgba(255, 255, 255, 0.12);
+  --accent: #f2f2f2;
+  --accent-2: #d9d9d9;
+  --accent-blue: #cfcfcf;
+  --accent-olive: #cfcfcf;
+  --accent-slate: #c4c4c4;
+  --accent-red: #f2f2f2;
+}
+
+body.healing-view {
+  background: radial-gradient(900px 600px at 70% 20%, rgba(255, 255, 255, 0.08), transparent 55%),
+    radial-gradient(700px 520px at 15% 85%, rgba(255, 255, 255, 0.05), transparent 60%),
+    linear-gradient(140deg, #040404, #0a0a0a 60%, #121212 100%);
+}
+
+body.healing-view #gfx {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.88));
+}
+
 .healing-view .settings-panel {
-  right: 20px;
-  top: 20px;
-  width: min(320px, 36vw);
-  max-height: calc(100vh - 120px);
+  position: fixed;
+  left: 16px;
+  right: auto;
+  top: 16px;
+  width: min(220px, 34vw);
+  max-height: 46vh;
   overflow-y: auto;
-  z-index: 110;
+  z-index: 140;
+  padding: 6px;
+  background: rgba(12, 16, 18, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
 }
 
 .healing-view .settings-panel textarea {
   width: 100%;
-  min-height: 80px;
-  background: rgba(12, 16, 18, 0.85);
+  min-height: 60px;
+  background: rgba(12, 16, 18, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 10px;
   color: var(--ink);
-  padding: 10px;
+  padding: 8px;
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   resize: vertical;
+}
+
+body.healing-show-settings .settings-panel {
+  width: min(300px, 60vw);
+  max-height: 70vh;
+}
+
+.healing-view .settings-section {
+  margin-bottom: 6px;
+  border-radius: 10px;
+  background: rgba(12, 16, 18, 0.55);
+}
+
+.healing-view .settings-section summary {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  padding: 6px 8px;
+}
+
+.healing-view .settings-content {
+  padding: 6px 8px 8px;
+  gap: 6px;
+}
+
+.healing-view .control-group__label {
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+}
+
+.healing-view .control label {
+  font-size: 0.6rem;
 }
 
 .healing-presets {
@@ -336,20 +397,13 @@
 
 @media (max-width: 900px), (max-height: 700px) {
   .healing-view .settings-panel {
-    left: 50%;
+    left: 12px;
     right: auto;
-    top: auto;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 160px);
-    width: min(92vw, 360px);
-    max-height: 52vh;
-    transform: translate(-50%, 120%);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
-
-  body.healing-show-settings .settings-panel {
-    transform: translate(-50%, 0);
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    bottom: auto;
+    width: min(200px, 60vw);
+    max-height: 44vh;
+    transform: none;
     opacity: 1;
     pointer-events: auto;
   }
